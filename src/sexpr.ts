@@ -1,26 +1,30 @@
 export type Nil = {
-  type: "nil"
+  readonly type: "nil"
 }
 
 export type Num = {
-  type: "number"
-  value: number
+  readonly type: "number"
+  readonly value: number
 }
 
 export type Bool = {
-  type: "boolean"
-  value: boolean
+  readonly type: "boolean"
+  readonly value: boolean
 }
 
 export type Sym = {
-  type: "symbol"
-  value: string
+  readonly type: "symbol"
+  readonly value: string
 }
 
 export type Cons = {
-  type: "cons"
+  readonly type: "cons"
   car: SExpr
   cdr: SExpr
 }
 
 export type SExpr = Nil | Num | Bool | Sym | Cons
+
+export const NIL: SExpr = { type: "nil" }
+export const TRUE: SExpr = { type: "boolean", value: true }
+export const FALSE: SExpr = { type: "boolean", value: false }

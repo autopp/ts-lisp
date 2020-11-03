@@ -17,6 +17,9 @@ export function isNum(x: any): x is Num {
 }
 
 export type Bool = Opaque<boolean, "Bool">
+export function makeBool(b: boolean): Bool {
+  return b as Bool
+}
 export const TRUE: Bool = true as Bool
 export const FALSE: Bool = false as Bool
 export function isBool(x: any): x is Bool {
@@ -45,3 +48,7 @@ export function isCons(x: any): x is Cons {
 }
 
 export type SExpr = Nil | Num | Bool | Sym | Cons
+
+export function toBool(x: SExpr): Bool {
+  return makeBool(!isNil(x) && x !== FALSE)
+}

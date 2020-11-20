@@ -26,3 +26,30 @@ export function describeEach<T extends any[]>(
     describe.each(table)(name, fn)
   }
 }
+
+export function itEach<T extends any[]>(
+  table: [string, ...T][],
+  fn: (...args: T) => any
+): void
+
+export function itEach<T extends any[]>(
+  name: string,
+  table: [...T][],
+  fn: (...args: T) => any
+): void
+
+export function itEach<T extends any[]>(
+  ...args:
+    | [table: [string, ...T][], fn: (...args: T) => any]
+    | [name: string, table: [...T][], fn: (...args: T) => any]
+): void {
+  if (args.length === 2) {
+    const [table, fn] = args
+    it.each(table)("%s", (_name, ...args: T) => {
+      fn(...args)
+    })
+  } else {
+    const [name, table, fn] = args
+    it.each(table)(name, fn)
+  }
+}

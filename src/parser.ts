@@ -1,3 +1,5 @@
+import { NIL, SExpr } from "./sexpr"
+
 export type Token = {
   type:
     | "num"
@@ -11,6 +13,8 @@ export type Token = {
     | "eoi"
   text: string
 }
+
+type TokenType = Token["type"]
 
 export const TRUE_TOKEN: Token = { type: "true", text: "#t" }
 export const FALSE_TOKEN: Token = { type: "false", text: "#f" }
@@ -32,6 +36,22 @@ export class ParserError extends Error {
   constructor(message: string) {
     super(message)
     Object.setPrototypeOf(this, new.target.prototype)
+  }
+}
+
+class Scanner {
+  private tokens: ReadonlyArray<Token>
+  private cur = 0
+
+  constructor(tokens: Token[]) {
+    this.tokens = tokens
+  }
+
+  peek = (): Token => this.tokens[this.cur]
+  next = (): Token => this.tokens[this.cur++]
+  expect = (type: TokenType): Token | null => {
+    const token = this.peek()
+    return token.type === type ? this.next() : null
   }
 }
 
@@ -76,4 +96,31 @@ export function tokenize(source: string): Token[] {
   tokens.push(EOI_TOKEN)
 
   return tokens
+}
+
+export function parseProgram(source: string): SExpr[] {
+  const scanner = new Scanner(tokenize(source))
+  const sexprs: SExpr[] = []
+
+  while (scanner.expect("eoi") === null) {
+    sexprs.push(parseSExpr(scanner))
+  }
+
+  return sexprs
+}
+
+function parseSExpr(scanner: Scanner): SExpr {
+  if (scanner.expect("lparen")) {
+    return parseAfterLparen(scanner)
+  } else {
+    throw new Error("not implemented")
+  }
+}
+
+function parseAfterLparen(scanner: Scanner): SExpr {
+  if (scanner.expect("rparen")) {
+    return NIL
+  } else {
+    throw new Error("not implemented")
+  }
 }

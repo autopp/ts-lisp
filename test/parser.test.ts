@@ -1,4 +1,5 @@
-import { EOI_TOKEN, ParserError, tokenize } from "@/parser"
+import { EOI_TOKEN, parseProgram, ParserError, tokenize } from "@/parser"
+import { makeNum, NIL, SExpr } from "@/sexpr"
 import { describeEach } from "./helper"
 
 describe("tokenize()", () => {
@@ -41,4 +42,16 @@ describe("tokenize()", () => {
       )
     })
   })
+})
+
+describe("parseProgram()", () => {
+  describeEach<[string, string, SExpr[]]>(
+    "with %j",
+    [["()", "a nil", [NIL]]],
+    (source, name, expected) => {
+      it(`returns ${name}`, () => {
+        expect(parseProgram(source)).toEqual(expected)
+      })
+    }
+  )
 })

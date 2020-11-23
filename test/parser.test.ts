@@ -1,5 +1,14 @@
 import { EOI_TOKEN, parseProgram, ParserError, tokenize } from "@/parser"
-import { FALSE, makeNum, makeSym, NIL, SExpr, TRUE } from "@/sexpr"
+import {
+  FALSE,
+  makeCons,
+  makeList,
+  makeNum,
+  makeSym,
+  NIL,
+  SExpr,
+  TRUE,
+} from "@/sexpr"
 import { describeEach } from "./helper"
 
 describe("tokenize()", () => {
@@ -53,6 +62,27 @@ describe("parseProgram()", () => {
       ["#f", "a false", [FALSE]],
       ["42", "a number", [makeNum(42)]],
       ["answer", "a symbol", [makeSym("answer")]],
+      ["(1)", "a list with 1 item", [makeList(makeNum(1))]],
+      [
+        "(1 2 3)",
+        "a list with 3 item",
+        [makeList(makeNum(1), makeNum(2), makeNum(3))],
+      ],
+      [
+        "(1 2 . 3)",
+        "a nested cons",
+        [makeCons(makeNum(1), makeCons(makeNum(2), makeNum(3)))],
+      ],
+      [
+        "((1 2) (3 . 4))",
+        "a nested list ",
+        [
+          makeList(
+            makeList(makeNum(1), makeNum(2)),
+            makeCons(makeNum(3), makeNum(4))
+          ),
+        ],
+      ],
     ],
     (source, name, expected) => {
       it(`returns ${name}`, () => {

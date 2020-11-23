@@ -1,4 +1,4 @@
-import { FALSE, makeNum, makeSym, NIL, SExpr, TRUE } from "./sexpr"
+import { FALSE, makeCons, makeNum, makeSym, NIL, SExpr, TRUE } from "./sexpr"
 
 export type Token = {
   type:
@@ -121,7 +121,26 @@ function parseAfterLparen(scanner: Scanner): SExpr {
   if (scanner.expect("rparen")) {
     return NIL
   } else {
-    throw new Error("not implemented")
+    const sexprs: SExpr[] = [parseSExpr(scanner)]
+    for (;;) {
+      if (scanner.expect("rparen")) {
+        sexprs.push(NIL)
+        break
+      }
+      if (scanner.expect("dot")) {
+        sexprs.push(parseSExpr(scanner))
+        if (!scanner.expect("rparen")) {
+          throw new ParserError(
+            `expected ), but got ${scanner.peek().type} token`
+          )
+        }
+        break
+      }
+
+      sexprs.push(parseSExpr(scanner))
+    }
+
+    return sexprs.reduceRight((cdr, car) => makeCons(car, cdr))
   }
 }
 

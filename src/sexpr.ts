@@ -52,3 +52,10 @@ export type SExpr = Nil | Num | Bool | Sym | Cons
 export function toBool(x: SExpr): Bool {
   return makeBool(!isNil(x) && x !== FALSE)
 }
+
+export function makeList(...sexprs: SExpr[]): Cons | Nil {
+  return sexprs.reduceRight<Cons | Nil>(
+    (cdr, sexpr) => makeCons(sexpr, cdr),
+    NIL
+  )
+}

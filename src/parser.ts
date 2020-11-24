@@ -1,4 +1,4 @@
-import { NIL, SExpr } from "./sexpr"
+import { FALSE, makeNum, makeSym, NIL, SExpr, TRUE } from "./sexpr"
 
 export type Token = {
   type:
@@ -113,7 +113,7 @@ function parseSExpr(scanner: Scanner): SExpr {
   if (scanner.expect("lparen")) {
     return parseAfterLparen(scanner)
   } else {
-    throw new Error("not implemented")
+    return parseAtom(scanner)
   }
 }
 
@@ -122,5 +122,21 @@ function parseAfterLparen(scanner: Scanner): SExpr {
     return NIL
   } else {
     throw new Error("not implemented")
+  }
+}
+
+function parseAtom(scanner: Scanner): SExpr {
+  const token = scanner.next()
+  switch (token.type) {
+    case "true":
+      return TRUE
+    case "false":
+      return FALSE
+    case "num":
+      return makeNum(parseInt(token.text))
+    case "sym":
+      return makeSym(token.text)
+    default:
+      throw new ParserError(`expected atom, but got ${token.type} token`)
   }
 }

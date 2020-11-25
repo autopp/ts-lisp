@@ -75,13 +75,18 @@ describe("parseProgram()", () => {
       ],
       [
         "((1 2) (3 . 4))",
-        "a nested list ",
+        "a nested list",
         [
           makeList(
             makeList(makeNum(1), makeNum(2)),
             makeCons(makeNum(3), makeNum(4))
           ),
         ],
+      ],
+      [
+        "42 (1 2)",
+        "multiple sexprs",
+        [makeNum(42), makeList(makeNum(1), makeNum(2))],
       ],
     ],
     (source, name, expected) => {
@@ -90,4 +95,12 @@ describe("parseProgram()", () => {
       })
     }
   )
+
+  describeEach<[string]>("with %j", [["("], [")"], ["(1 .)"]], (source) => {
+    const doParseProgram = () => parseProgram(source)
+
+    it(`throws ParserError`, () => {
+      expect(doParseProgram).toThrowError(ParserError)
+    })
+  })
 })

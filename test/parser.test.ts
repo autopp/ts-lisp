@@ -83,6 +83,17 @@ describe("parseProgram()", () => {
           ),
         ],
       ],
+      ["'a", "a quoted symbol", [makeList(makeSym("quote"), makeSym("a"))]],
+      [
+        "'(1 2 3)",
+        "a quoted list",
+        [
+          makeList(
+            makeSym("quote"),
+            makeList(makeNum(1), makeNum(2), makeNum(3))
+          ),
+        ],
+      ],
       [
         "42 (1 2)",
         "multiple sexprs",

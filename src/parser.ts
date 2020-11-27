@@ -1,4 +1,13 @@
-import { FALSE, makeCons, makeNum, makeSym, NIL, SExpr, TRUE } from "./sexpr"
+import {
+  FALSE,
+  makeCons,
+  makeList,
+  makeNum,
+  makeSym,
+  NIL,
+  SExpr,
+  TRUE,
+} from "./sexpr"
 
 export type Token = {
   type:
@@ -112,6 +121,8 @@ export function parseProgram(source: string): SExpr[] {
 function parseSExpr(scanner: Scanner): SExpr {
   if (scanner.expect("lparen")) {
     return parseAfterLparen(scanner)
+  } else if (scanner.expect("quote")) {
+    return makeList(makeSym("quote"), parseSExpr(scanner))
   } else {
     return parseAtom(scanner)
   }

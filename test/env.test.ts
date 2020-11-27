@@ -30,11 +30,15 @@ describe(Env, () => {
         let env: Env
 
         beforeEach(() => {
-          const parent = new Env(null)
-          parent.define("nil", NIL)
-          parent.define("language", makeSym("javascript"))
+          const parent = new Env(
+            [
+              ["nil", NIL],
+              ["language", makeSym("javascript")],
+            ],
+            null
+          )
 
-          env = new Env(parent)
+          env = new Env([], parent)
           env.define("answer", makeNum(42))
           env.define("language", makeSym("typescript"))
         })

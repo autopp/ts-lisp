@@ -4,8 +4,8 @@ export class Env {
   private map: Map<string, SExpr>
   private parent: Env | null
 
-  constructor(parent: Env | null) {
-    this.map = new Map<string, SExpr>()
+  constructor(initial: [string, SExpr][], parent: Env | null) {
+    this.map = new Map(initial)
     this.parent = parent
   }
 

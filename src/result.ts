@@ -15,12 +15,16 @@ export class Ok<T, E> implements ResultInterface<T, E> {
     this.value = value
   }
 
+  toString(): string {
+    return `Ok(${this.value})`
+  }
+
   isOk(this: Result<T, E>): this is Ok<T, E> {
-    throw new Error("Method not implemented.")
+    return true
   }
 
   isErr(this: Result<T, E>): this is Err<T, E> {
-    throw new Error("Method not implemented.")
+    return false
   }
 
   filter(f: (x: T) => boolean, e: E): Result<T, E> {
@@ -40,12 +44,19 @@ export class Err<T, E> implements ResultInterface<T, E> {
   constructor(value: E) {
     this.value = value
   }
+
+  toString(): string {
+    return `Err(${this.value})`
+  }
+
   isOk(this: Result<T, E>): this is Ok<T, E> {
-    throw new Error("Method not implemented.")
+    return false
   }
+
   isErr(this: Result<T, E>): this is Err<T, E> {
-    throw new Error("Method not implemented.")
+    return true
   }
+
   filter(f: (x: T) => boolean, e: E): Result<T, E> {
     throw new Error("Method not implemented.")
   }

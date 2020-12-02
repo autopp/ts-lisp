@@ -18,5 +18,6 @@ module.exports = {
   plugins: ["@typescript-eslint"],
   rules: {
     "prettier/prettier": ["error", { semi: false }],
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
   },
 }

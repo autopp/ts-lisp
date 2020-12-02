@@ -28,12 +28,13 @@ export class Ok<T, E> implements ResultInterface<T, E> {
   }
 
   filter(f: (x: T) => boolean, e: E): Result<T, E> {
+    return f(this.value) ? this : new Err(e)
+  }
+
+  map<R>(_f: (x: T) => R): Result<R, E> {
     throw new Error("Method not implemented.")
   }
-  map<R>(f: (x: T) => R): Result<R, E> {
-    throw new Error("Method not implemented.")
-  }
-  flatMap<R>(f: (x: T) => Result<R, E>): Result<R, E> {
+  flatMap<R>(_f: (x: T) => Result<R, E>): Result<R, E> {
     throw new Error("Method not implemented.")
   }
 }
@@ -57,13 +58,14 @@ export class Err<T, E> implements ResultInterface<T, E> {
     return true
   }
 
-  filter(f: (x: T) => boolean, e: E): Result<T, E> {
+  filter(_f: (x: T) => boolean, _e: E): Result<T, E> {
+    return this
+  }
+
+  map<R>(_f: (x: T) => R): Result<R, E> {
     throw new Error("Method not implemented.")
   }
-  map<R>(f: (x: T) => R): Result<R, E> {
-    throw new Error("Method not implemented.")
-  }
-  flatMap<R>(f: (x: T) => Result<R, E>): Result<R, E> {
+  flatMap<R>(_f: (x: T) => Result<R, E>): Result<R, E> {
     throw new Error("Method not implemented.")
   }
 }

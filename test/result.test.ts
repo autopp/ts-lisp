@@ -110,13 +110,49 @@ describe("Result", () => {
     }
   )
 
-  describeResultMethod<[Result<string, string>]>(
+  type MappedResult = Result<string, string>
+  describeResultMethod<[MappedResult]>(
     ".map()",
     [new Ok<string, string>("answer is 42")],
     [new Err<string, string>("error")],
     (result, expected) => {
       it(`returns ${expected}`, () => {
         expect(result.map((x) => `answer is ${x}`)).toEqual(expected)
+      })
+    }
+  )
+
+  describeResultMethod(
+    ".flatMap()",
+    (ok) => {
+      describeEach<[(x: number) => MappedResult, MappedResult]>(
+        [
+          [
+            "with function which return Ok",
+            (x) =>
+              x % 2 == 0 ? new Ok(`answer is ${x}`) : new Err(`not even`),
+            new Ok("answer is 42"),
+          ],
+          [
+            "with function which return Err",
+            (x) => (x % 2 == 1 ? new Ok(`answer is ${x}`) : new Err(`not odd`)),
+            new Err("not odd"),
+          ],
+        ],
+        (f, expected) => {
+          it(`returns ${expected}`, () => {
+            expect(ok.flatMap(f)).toEqual(expected)
+          })
+        }
+      )
+    },
+    (err) => {
+      it(`returns the same value always`, () => {
+        expect(
+          err.flatMap((x) =>
+            x % 2 == 0 ? new Ok(`answer is ${x}`) : new Err(`not even`)
+          )
+        ).toEqual(new Err("error"))
       })
     }
   )

@@ -35,8 +35,8 @@ export class Ok<T, E> implements ResultInterface<T, E> {
     return new Ok(f(this.value))
   }
 
-  flatMap<R>(_f: (x: T) => Result<R, E>): Result<R, E> {
-    throw new Error("Method not implemented.")
+  flatMap<R>(f: (x: T) => Result<R, E>): Result<R, E> {
+    return f(this.value)
   }
 }
 
@@ -68,6 +68,6 @@ export class Err<T, E> implements ResultInterface<T, E> {
   }
 
   flatMap<R>(_f: (x: T) => Result<R, E>): Result<R, E> {
-    throw new Error("Method not implemented.")
+    return new Err(this.value)
   }
 }

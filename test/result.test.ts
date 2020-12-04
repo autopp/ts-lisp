@@ -109,4 +109,15 @@ describe("Result", () => {
       })
     }
   )
+
+  describeResultMethod<[Result<string, string>]>(
+    ".map()",
+    [new Ok<string, string>("answer is 42")],
+    [new Err<string, string>("error")],
+    (result, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(result.map((x) => `answer is ${x}`)).toEqual(expected)
+      })
+    }
+  )
 })

@@ -43,7 +43,7 @@ describe("tokenize()", () => {
   )
 
   describe('with "#" (invalid input)', () => {
-    it("throws ParserError contains unrecognized character infomation", () => {
+    it("returns Err contains unrecognized character infomation", () => {
       expect(tokenize("#")).toEqual(new Err('unrecognized character found "#"'))
     })
   })
@@ -104,7 +104,7 @@ describe("parseProgram()", () => {
   )
 
   describeEach<[string]>("with %j", [["("], [")"], ["(1 .)"]], (source) => {
-    it(`throws ParserError`, () => {
+    it(`returns Err`, () => {
       expect(parseProgram(source)).toEqual(new Err(expect.any(String)))
     })
   })

@@ -47,6 +47,10 @@ export class Err<T, E> implements ResultInterface<T, E> {
     this.value = value
   }
 
+  cast<R>(): Err<R, E> {
+    return new Err(this.value)
+  }
+
   toString(): string {
     return `Err(${this.value})`
   }

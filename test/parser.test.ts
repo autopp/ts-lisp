@@ -1,4 +1,5 @@
 import { EOI_TOKEN, parseProgram, ParserError, tokenize } from "@/parser"
+import { Ok, Err } from "@/result"
 import {
   FALSE,
   makeCons,
@@ -36,19 +37,14 @@ describe("tokenize()", () => {
     ],
     (source, expected) => {
       it(`returns [${expected.map((t) => t.type)}]`, () => {
-        expect(tokenize(source)).toEqual(expected)
+        expect(tokenize(source)).toEqual(new Ok(expected))
       })
     }
   )
 
   describe('with "#" (invalid input)', () => {
-    const doTokenize = () => tokenize("#")
-
     it("throws ParserError contains unrecognized character infomation", () => {
-      expect(doTokenize).toThrowWithMessage(
-        ParserError,
-        'unrecognized character found "#"'
-      )
+      expect(tokenize("#")).toEqual(new Err('unrecognized character found "#"'))
     })
   })
 })
@@ -102,16 +98,14 @@ describe("parseProgram()", () => {
     ],
     (source, name, expected) => {
       it(`returns ${name}`, () => {
-        expect(parseProgram(source)).toEqual(expected)
+        expect(parseProgram(source)).toEqual(new Ok(expected))
       })
     }
   )
 
   describeEach<[string]>("with %j", [["("], [")"], ["(1 .)"]], (source) => {
-    const doParseProgram = () => parseProgram(source)
-
     it(`throws ParserError`, () => {
-      expect(doParseProgram).toThrowError(ParserError)
+      expect(parseProgram(source)).toEqual(new Err(expect.any(String)))
     })
   })
 })

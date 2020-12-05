@@ -1,3 +1,4 @@
+import { Err, Ok, Result } from "./result"
 import {
   FALSE,
   makeCons,
@@ -64,7 +65,7 @@ class Scanner {
   }
 }
 
-export function tokenize(source: string): Token[] {
+export function tokenize(source: string): Result<Token[], string> {
   const rules: [RegExp, (text: string) => Token | undefined][] = [
     [/^\s+/, () => undefined],
     [/^[-+]?\d+/, makeNumToken],
@@ -91,7 +92,7 @@ export function tokenize(source: string): Token[] {
       }
     }
     if (matched === undefined) {
-      throw new ParserError(`unrecognized character found "${rest[0]}"`)
+      return new Err(`unrecognized character found "${rest[0]}"`)
     }
 
     const token = matched.makeToken(matched.text)
@@ -104,69 +105,83 @@ export function tokenize(source: string): Token[] {
 
   tokens.push(EOI_TOKEN)
 
-  return tokens
+  return new Ok(tokens)
 }
 
-export function parseProgram(source: string): SExpr[] {
-  const scanner = new Scanner(tokenize(source))
-  const sexprs: SExpr[] = []
+export function parseProgram(source: string): Result<SExpr[], string> {
+  return tokenize(source).flatMap((tokens) => {
+    const scanner = new Scanner(tokens)
+    const sexprs: SExpr[] = []
+    while (scanner.expect("eoi") === null) {
+      const sexpr = parseSExpr(scanner)
+      if (sexpr.isErr()) {
+        return sexpr.cast<SExpr[]>()
+      }
+      sexpr.map((value) => {
+        sexprs.push(value)
+      })
+    }
 
-  while (scanner.expect("eoi") === null) {
-    sexprs.push(parseSExpr(scanner))
-  }
-
-  return sexprs
+    return new Ok(sexprs)
+  })
 }
 
-function parseSExpr(scanner: Scanner): SExpr {
+function parseSExpr(scanner: Scanner): Result<SExpr, string> {
   if (scanner.expect("lparen")) {
     return parseAfterLparen(scanner)
   } else if (scanner.expect("quote")) {
-    return makeList(makeSym("quote"), parseSExpr(scanner))
+    return parseSExpr(scanner).map((quoted) =>
+      makeList(makeSym("quote"), quoted)
+    )
   } else {
     return parseAtom(scanner)
   }
 }
 
-function parseAfterLparen(scanner: Scanner): SExpr {
+function parseAfterLparen(scanner: Scanner): Result<SExpr, string> {
   if (scanner.expect("rparen")) {
-    return NIL
-  } else {
-    const sexprs: SExpr[] = [parseSExpr(scanner)]
-    for (;;) {
+    return new Ok(NIL)
+  }
+
+  return parseSExpr(scanner).flatMap((first) => {
+    function parseAfterFirst(sexprs: SExpr[]): Result<SExpr[], string> {
       if (scanner.expect("rparen")) {
         sexprs.push(NIL)
-        break
-      }
-      if (scanner.expect("dot")) {
-        sexprs.push(parseSExpr(scanner))
-        if (!scanner.expect("rparen")) {
-          throw new ParserError(
-            `expected ), but got ${scanner.peek().type} token`
-          )
-        }
-        break
+        return new Ok(sexprs)
       }
 
-      sexprs.push(parseSExpr(scanner))
+      if (scanner.expect("dot")) {
+        return parseSExpr(scanner).flatMap((last) => {
+          sexprs.push(last)
+          return scanner.expect("rparen")
+            ? new Ok(sexprs)
+            : new Err(`expected ), but got ${scanner.peek().type} token`)
+        })
+      }
+      return parseSExpr(scanner).flatMap((elem) => {
+        sexprs.push(elem)
+        return parseAfterFirst(sexprs)
+      })
     }
 
-    return sexprs.reduceRight((cdr, car) => makeCons(car, cdr))
-  }
+    return parseAfterFirst([first]).map((sexprs) =>
+      sexprs.reduceRight((cdr, car) => makeCons(car, cdr))
+    )
+  })
 }
 
-function parseAtom(scanner: Scanner): SExpr {
+function parseAtom(scanner: Scanner): Result<SExpr, string> {
   const token = scanner.next()
   switch (token.type) {
     case "true":
-      return TRUE
+      return new Ok(TRUE)
     case "false":
-      return FALSE
+      return new Ok(FALSE)
     case "num":
-      return makeNum(parseInt(token.text))
+      return new Ok(makeNum(parseInt(token.text)))
     case "sym":
-      return makeSym(token.text)
+      return new Ok(makeSym(token.text))
     default:
-      throw new ParserError(`expected atom, but got ${token.type} token`)
+      return new Err(`expected atom, but got ${token.type} token`)
   }
 }

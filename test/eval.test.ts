@@ -1,15 +1,16 @@
 import { Env } from "@/env"
-import { evalSExpr } from "@/eval"
+import { EvalResult, evalSExpr } from "@/eval"
+import { Ok } from "@/result"
 import { NIL, TRUE, FALSE, makeNum, makeSym, makeCons, SExpr } from "@/sexpr"
 import { describeEach } from "./helper"
 
 describe("evalSExpr", () => {
-  describeEach<[SExpr, string, SExpr]>(
+  describeEach<[SExpr, string, EvalResult]>(
     [
-      ["with ()", NIL, "()", NIL],
-      ["with #t", TRUE, "#t", TRUE],
-      ["with #f", FALSE, "#f", FALSE],
-      ["with 42", makeNum(42), "42", makeNum(42)],
+      ["with ()", NIL, "()", new Ok(NIL)],
+      ["with #t", TRUE, "#t", new Ok(TRUE)],
+      ["with #f", FALSE, "#f", new Ok(FALSE)],
+      ["with 42", makeNum(42), "42", new Ok(makeNum(42))],
     ],
     (sexpr, expectedString, expected) => {
       const env = new Env([], null)

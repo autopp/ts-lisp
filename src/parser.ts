@@ -1,4 +1,4 @@
-import { Err, Ok, Result } from "./result"
+import { cond, Err, Ok, Result } from "./result"
 import {
   FALSE,
   makeCons,
@@ -153,9 +153,11 @@ function parseAfterLparen(scanner: Scanner): Result<SExpr, string> {
       if (scanner.expect("dot")) {
         return parseSExpr(scanner).flatMap((last) => {
           sexprs.push(last)
-          return scanner.expect("rparen")
-            ? new Ok(sexprs)
-            : new Err(`expected ), but got ${scanner.peek().type} token`)
+          return cond(
+            scanner.expect("rparen") !== null,
+            () => sexprs,
+            () => `expected ), but got ${scanner.peek().type} token`
+          )
         })
       }
       return parseSExpr(scanner).flatMap((elem) => {

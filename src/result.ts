@@ -75,3 +75,11 @@ export class Err<T, E> implements ResultInterface<T, E> {
     return new Err(this.value)
   }
 }
+
+export function cond<T, E>(
+  c: boolean,
+  okVal: () => T,
+  errVal: () => E
+): Result<T, E> {
+  return c ? new Ok(okVal()) : new Err(errVal())
+}

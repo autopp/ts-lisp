@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Err, Ok, Result } from "@/result"
+import { Err, Ok, Result, cond } from "@/result"
 import { describeEach } from "./helper"
 
 type TestResult = Result<number, string>
@@ -153,6 +153,27 @@ describe("Result", () => {
             x % 2 == 0 ? new Ok(`answer is ${x}`) : new Err(`not even`)
           )
         ).toEqual(new Err("error"))
+      })
+    }
+  )
+})
+
+describe("cond()", () => {
+  describeEach<[boolean, Result<number, string>]>(
+    'with %j, () => 42, () => "error"',
+    [
+      [true, new Ok(42)],
+      [false, new Err("error")],
+    ],
+    (c, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(
+          cond(
+            c,
+            () => 42,
+            () => "error"
+          )
+        ).toEqual(expected)
       })
     }
   )

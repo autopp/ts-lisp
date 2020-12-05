@@ -42,13 +42,6 @@ export function makeSymToken(text: string): Token {
   return { type: "sym", text }
 }
 
-export class ParserError extends Error {
-  constructor(message: string) {
-    super(message)
-    Object.setPrototypeOf(this, new.target.prototype)
-  }
-}
-
 class Scanner {
   private tokens: ReadonlyArray<Token>
   private cur = 0

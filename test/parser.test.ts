@@ -1,4 +1,4 @@
-import { EOI_TOKEN, parseProgram, ParserError, tokenize } from "@/parser"
+import { EOI_TOKEN, parseProgram, tokenize } from "@/parser"
 import { Ok, Err } from "@/result"
 import {
   FALSE,

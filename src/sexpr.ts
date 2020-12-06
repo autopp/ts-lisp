@@ -3,6 +3,7 @@
 import { Opaque } from "ts-essentials"
 import { Env } from "./env"
 import { EvalResult } from "./eval"
+import { Some, None, Option } from "./option"
 
 export type Nil = Opaque<null, "Nil">
 export const NIL: Nil = null as Nil
@@ -154,4 +155,30 @@ export function makeList(...sexprs: SExpr[]): Cons | Nil {
     (cdr, sexpr) => makeCons(sexpr, cdr),
     NIL
   )
+}
+
+export function toArray(
+  sexpr: SExpr
+): Option<{ list: SExpr[]; extra: Option<SExpr> }> {
+  function toArrayWith(
+    { car, cdr }: Cons,
+    list: SExpr[]
+  ): ReturnType<typeof toArray> {
+    list.push(car)
+    if (isCons(cdr)) {
+      return toArrayWith(cdr, list)
+    }
+
+    return new Some({ list, extra: new Some(cdr).filter((x) => !isNil(x)) })
+  }
+
+  if (isNil(sexpr)) {
+    return new Some({ list: [], extra: new None() })
+  }
+
+  if (isCons(sexpr)) {
+    return toArrayWith(sexpr, [])
+  }
+
+  return new None()
 }

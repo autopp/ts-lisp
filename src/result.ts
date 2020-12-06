@@ -10,7 +10,7 @@ interface ResultInterface<T, E> {
 
 export class Ok<T, E> implements ResultInterface<T, E> {
   private readonly kind = "ok"
-  private readonly value: T
+  protected readonly value: T
   constructor(value: T) {
     this.value = value
   }
@@ -82,4 +82,16 @@ export function cond<T, E>(
   errVal: () => E
 ): Result<T, E> {
   return c ? new Ok(okVal()) : new Err(errVal())
+}
+
+export type Option<T> = Result<T, void>
+export class Some<T> extends Ok<T, void> {
+  toString(): string {
+    return `Some${this.value}`
+  }
+}
+export class None<T> extends Err<T, void> {
+  toString(): string {
+    return "None"
+  }
 }

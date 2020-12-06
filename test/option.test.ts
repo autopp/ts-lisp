@@ -10,6 +10,7 @@ const noneVal: TestOption = new None()
 
 function describeOptionMethod<T extends any[]>(
   name: string,
+  caseName: string,
   someCase: [...T],
   noneCase: [...T],
   fn: (option: TestOption, ...args: T) => any
@@ -25,6 +26,7 @@ function describeOptionMethod<T extends any[]>(
   name: string,
   ...args:
     | [
+        caseName: string,
         someCase: [...T],
         noneCase: [...T],
         f: (option: TestOption, ...args: T) => any
@@ -32,10 +34,10 @@ function describeOptionMethod<T extends any[]>(
     | [someF: (option: TestOption) => any, someF: (option: TestOption) => any]
 ): void {
   describe(name, () => {
-    if (args.length === 3) {
-      const [someCase, noneCase, f] = args
+    if (args.length === 4) {
+      const [caseName, someCase, noneCase, f] = args
       describeEach(
-        "on %s",
+        caseName,
         [
           [someVal, ...someCase],
           [noneVal, ...noneCase],
@@ -52,24 +54,100 @@ function describeOptionMethod<T extends any[]>(
 }
 
 describe("Option", () => {
-  describe(".okOr", () => {
-    describeEach<[Option<number>, Result<number, string>]>(
-      'on %s with "error"',
-      [
-        [new Some(42), new Ok(42)],
-        [new None(), new Err("error")],
-      ],
-      (option, expected) => {
-        it(`returns ${expected}`, () => {
-          expect(option.okOr("error")).toEqual(expected)
-        })
-      }
-    )
-  })
+  describeOptionMethod(
+    ".isDefined()",
+    "on %s",
+    [true],
+    [false],
+    (option, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(option.isDefined()).toEqual(expected)
+      })
+    }
+  )
 
-  describeOptionMethod(".isDefined()", [true], [false], (option, expected) => {
-    it(`returns ${expected}`, () => {
-      expect(option.isDefined()).toEqual(expected)
-    })
-  })
+  describeOptionMethod(
+    ".filter()",
+    (some) => {
+      describeEach<[(x: number) => boolean, TestOption]>(
+        [
+          ["with function which returns true", (x: number) => x % 2 == 0, some],
+          [
+            "with function which returns false",
+            (x: number) => x % 2 == 1,
+            new None(),
+          ],
+        ],
+        (f, expected) => {
+          it(`returns ${expected}`, () => {
+            expect(some.filter(f)).toEqual(expected)
+          })
+        }
+      )
+    },
+    (none) => {
+      it("returns self always", () => {
+        expect(none.filter((x) => x % 2 == 0)).toEqual(none)
+      })
+    }
+  )
+
+  type MappedOption = Option<string>
+  describeOptionMethod<[MappedOption]>(
+    ".map()",
+    "on %s with (x) => `answer is ${x}`",
+    [new Some("answer is 42")],
+    [new None()],
+    (option, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(option.map((x) => `answer is ${x}`)).toEqual(expected)
+      })
+    }
+  )
+
+  describeOptionMethod(
+    ".flatMap()",
+    (some) => {
+      describeEach<[(x: number) => MappedOption, MappedOption]>(
+        [
+          [
+            "with function which return Some",
+            (x) => (x % 2 == 0 ? new Some(`answer is ${x}`) : new None()),
+            new Some("answer is 42"),
+          ],
+          [
+            "with function which return None",
+            (x) => (x % 2 == 1 ? new Some(`answer is ${x}`) : new None()),
+            new None(),
+          ],
+        ],
+        (f, expected) => {
+          it(`returns ${expected}`, () => {
+            expect(some.flatMap(f)).toEqual(expected)
+          })
+        }
+      )
+    },
+    (none) => {
+      it(`returns the same value always`, () => {
+        expect(
+          none.flatMap((x) =>
+            x % 2 == 0 ? new Some(`answer is ${x}`) : new None()
+          )
+        ).toEqual(new None())
+      })
+    }
+  )
+
+  describeOptionMethod<[Result<number, string>]>(
+    ".okOr()",
+    'on %s with "error"',
+    [new Ok(42)],
+    [new Err("error")],
+    (option, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(option.okOr("error")).toEqual(expected)
+      })
+    }
+  )
 })

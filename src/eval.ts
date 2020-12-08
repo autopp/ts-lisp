@@ -1,5 +1,5 @@
 import { Env } from "./env"
-import { Err, Ok, Result } from "./result"
+import { Err, mapWithResult, Ok, Result } from "./result"
 import {
   Arity,
   Func,
@@ -45,17 +45,7 @@ export function evalSExpr(sexpr: SExpr, env: Env): EvalResult {
 }
 
 function callFunc(func: Func, args: SExpr[], env: Env): EvalResult {
-  return args
-    .reduce<Result<SExpr[], string>>(
-      (result, arg) =>
-        result.flatMap((list) =>
-          evalSExpr(arg, env).map((evaledArg) => {
-            list.push(evaledArg)
-            return list
-          })
-        ),
-      new Ok(new Array<SExpr>())
-    )
+  return mapWithResult(args, (arg) => evalSExpr(arg, env))
     .flatMap((evaledArgs) => validateByArity(evaledArgs, func.arity))
     .flatMap((evaledArgs) => {
       if (isBuiltinFunc(func)) {

@@ -10,7 +10,7 @@ interface ResultInterface<T, E> {
 
 export class Ok<T, E> implements ResultInterface<T, E> {
   private readonly kind = "ok"
-  protected readonly value: T
+  readonly value: T
   constructor(value: T) {
     this.value = value
   }
@@ -82,4 +82,20 @@ export function cond<T, E>(
   errVal: () => E
 ): Result<T, E> {
   return c ? new Ok(okVal()) : new Err(errVal())
+}
+
+export function mapWithResult<T, R, E>(
+  array: T[],
+  f: (x: T, i: number) => Result<R, E>
+): Result<R[], E> {
+  const results: R[] = []
+  for (let i = 0; i < array.length; i++) {
+    const result = f(array[i], i)
+    if (result.isErr()) {
+      return result.cast<R[]>()
+    }
+    results.push(result.value)
+  }
+
+  return new Ok(results)
 }

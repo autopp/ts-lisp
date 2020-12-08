@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Err, Ok, Result, cond } from "@/result"
+import { Err, Ok, Result, cond, mapWithResult } from "@/result"
 import { describeEach } from "./helper"
 
 type TestResult = Result<number, string>
@@ -177,4 +177,44 @@ describe("cond()", () => {
       })
     }
   )
+})
+
+describe("mapWithResult", () => {
+  let doublePositive: jest.Mock<
+    Result<{ doubled: number }, string>,
+    [number, number]
+  >
+
+  beforeEach(() => {
+    doublePositive = jest
+      .fn<Result<{ doubled: number }, string>, [number, number]>()
+      .mockImplementation((x, i) =>
+        x >= 0
+          ? new Ok({ doubled: 2 * x })
+          : new Err(`array contains negative at ${i}`)
+      )
+  })
+
+  describe("when function returns Ok to the last", () => {
+    it(`returns mapped array in Ok`, () => {
+      expect(mapWithResult([1, 2, 3, 4], doublePositive)).toEqual(
+        new Ok([{ doubled: 2 }, { doubled: 4 }, { doubled: 6 }, { doubled: 8 }])
+      )
+    })
+  })
+
+  describe("when array is empty", () => {
+    it(`returns empty array in Ok`, () => {
+      expect(mapWithResult([], () => new Err("error"))).toEqual(new Ok([]))
+    })
+  })
+
+  describe("when function returns Ok in the middle", () => {
+    it(`suspends iteration and returns generated Err`, () => {
+      expect(mapWithResult([1, 2, -3, 4], doublePositive)).toEqual(
+        new Err("array contains negative at 2")
+      )
+      expect(doublePositive).toBeCalledTimes(3)
+    })
+  })
 })

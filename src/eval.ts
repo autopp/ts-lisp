@@ -51,7 +51,12 @@ function callFunc(func: Func, args: SExpr[], env: Env): EvalResult {
       if (isBuiltinFunc(func)) {
         return func.body(evaledArgs, env)
       } else {
-        throw new Error("not implemented")
+        const namedArgs: [
+          string,
+          SExpr
+        ][] = func.requiredParams.map((name, i) => [name, evaledArgs[i]])
+        const newEnv = new Env(namedArgs, func.env)
+        return evalSExpr(func.body, newEnv)
       }
     })
 }

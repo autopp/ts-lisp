@@ -108,13 +108,15 @@ export type UserFunc = {
   optionalParams: { name: string; defaultVal: SExpr }[]
   restParam: string | undefined
   body: SExpr
+  env: Env
 }
 export function makeUserFunc(
   name: string,
   requiredParams: string[],
   optionalParams: { name: string; defaultVal: SExpr }[],
   restParam: string | undefined,
-  body: SExpr
+  body: SExpr,
+  env: Env
 ): UserFunc {
   return {
     type: "lambda",
@@ -128,6 +130,7 @@ export function makeUserFunc(
     optionalParams,
     restParam,
     body,
+    env,
   }
 }
 export function isUserFunc(x: SExpr): x is UserFunc {

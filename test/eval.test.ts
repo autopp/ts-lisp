@@ -60,6 +60,24 @@ describe("evalSExpr", () => {
         new Err("expected 2, but got 3"),
       ],
       [
+        "with (list2more 1 2)",
+        makeList(makeSym("list2more"), makeNum(1), makeNum(2)),
+        "(1 2)",
+        new Ok(makeList(makeNum(1), makeNum(2))),
+      ],
+      [
+        "with (list2more 1 2 3)",
+        makeList(makeSym("list2more"), makeNum(1), makeNum(2), makeNum(3)),
+        "(1 2)",
+        new Ok(makeList(makeNum(1), makeNum(2), makeNum(3))),
+      ],
+      [
+        "with (list2more 1)",
+        makeList(makeSym("list2more"), makeNum(1)),
+        "error",
+        new Err("expected 2 or more than, but got 1"),
+      ],
+      [
         "with (inc 41)",
         makeList(makeSym("inc"), makeNum(41)),
         "42",

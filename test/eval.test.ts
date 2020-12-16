@@ -13,6 +13,7 @@ import {
   makeList,
   makeUserFunc,
   makeCons,
+  makeSpForm,
 } from "@/sexpr"
 import { describeEach } from "./helper"
 
@@ -40,6 +41,24 @@ describe("evalSExpr", () => {
         makeList(makeSym("answer"), makeNum(41)),
         "error",
         new Err("expected proc, but got not proc"),
+      ],
+      [
+        "with (if-zero 0 42)",
+        makeList(makeSym("if-zero"), makeNum(0), makeNum(42)),
+        "42",
+        new Ok(makeNum(42)),
+      ],
+      [
+        "with (if-zero 1 unknown)",
+        makeList(makeSym("if-zero"), makeNum(1), makeSym("unknown")),
+        "()",
+        new Ok(NIL),
+      ],
+      [
+        "with (if-zero 0 unknown)",
+        makeList(makeSym("if-zero"), makeNum(0), makeSym("unknown")),
+        "error",
+        new Err("unknown is not defined"),
       ],
       [
         "with (add 41 1)",
@@ -126,6 +145,16 @@ describe("evalSExpr", () => {
         )
       )
       env.define("inc", inc)
+
+      const ifZero = makeSpForm(
+        "if-zero",
+        { required: 2 },
+        ([cond, then], env) =>
+          evalSExpr(cond, env).flatMap((evaledCond) =>
+            evaledCond === 0 ? evalSExpr(then, env) : new Ok(NIL)
+          )
+      )
+      env.define("if-zero", ifZero)
 
       it(`returns ${expectedString}`, () => {
         expect(evalSExpr(sexpr, env)).toEqual(expected)

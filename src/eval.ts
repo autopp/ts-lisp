@@ -5,11 +5,9 @@ import {
   Func,
   isBool,
   isBuiltinFunc,
-  isCons,
   isFunc,
   isNil,
   isNum,
-  isProc,
   isSpForm,
   isSym,
   SExpr,
@@ -31,17 +29,25 @@ export function evalSExpr(sexpr: SExpr, env: Env): EvalResult {
     return toArray(sexpr)
       .filter(({ extra }) => !extra.isDefined())
       .okOr("expected list format")
-      .flatMap(({ list }) => {
-        const [shouldProc, ...args] = list
-        return evalSExpr(shouldProc, env).flatMap((proc) => {
+      .flatMap(({ list: [shouldProc, ...args] }) =>
+        evalSExpr(shouldProc, env).flatMap((proc) => {
+          if (isSpForm(proc)) {
+            return callSpForm(proc, args, env)
+          }
           if (isFunc(proc)) {
             return callFunc(proc, args, env)
           }
 
           return new Err("expected proc, but got not proc")
         })
-      })
+      )
   }
+}
+
+function callSpForm(spForm: SpForm, args: SExpr[], env: Env): EvalResult {
+  return validateByArity(args, spForm.arity).flatMap((args) =>
+    spForm.body(args, env)
+  )
 }
 
 function callFunc(func: Func, args: SExpr[], env: Env): EvalResult {

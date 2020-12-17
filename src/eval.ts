@@ -45,44 +45,51 @@ export function evalSExpr(sexpr: SExpr, env: Env): EvalResult {
 }
 
 function callSpForm(spForm: SpForm, args: SExpr[], env: Env): EvalResult {
-  return validateByArity(args, spForm.arity).flatMap((args) =>
+  return validateByArity(args, spForm.arity).flatMap(() =>
     spForm.body(args, env)
   )
 }
 
 function callFunc(func: Func, args: SExpr[], env: Env): EvalResult {
-  return mapWithResult(args, (arg) => evalSExpr(arg, env))
-    .flatMap((evaledArgs) => validateByArity(evaledArgs, func.arity))
-    .flatMap((evaledArgs) => {
-      if (isBuiltinFunc(func)) {
-        return func.body(evaledArgs, env)
-      } else {
-        const namedArgs: [
-          string,
-          SExpr
-        ][] = func.requiredParams.map((name, i) => [name, evaledArgs[i]])
-        const newEnv = new Env(namedArgs, func.env)
-        return evalSExpr(func.body, newEnv)
-      }
-    })
+  return mapWithResult(args, (arg) =>
+    evalSExpr(arg, env)
+  ).flatMap((evaledArgs) => invokeFunc(func, evaledArgs, env))
 }
 
-function validateByArity(list: SExpr[], arity: Arity): Result<SExpr[], string> {
+export function invokeFunc(func: Func, args: SExpr[], env: Env): EvalResult {
+  return validateByArity(args, func.arity).flatMap(() => {
+    if (isBuiltinFunc(func)) {
+      return func.body(args, env)
+    } else {
+      const namedArgs: [
+        string,
+        SExpr
+      ][] = func.requiredParams.map((name, i) => [name, args[i]])
+      const newEnv = new Env(namedArgs, func.env)
+      return evalSExpr(func.body, newEnv)
+    }
+  })
+}
+
+function validateByArity(
+  list: SExpr[],
+  arity: Arity
+): Result<undefined, string> {
   const length = list.length
 
   if (arity.hasRest) {
     return length >= arity.required
-      ? new Ok(list)
+      ? new Ok(undefined)
       : new Err(`expected ${arity.required} or more than, but got ${length}`)
   } else {
     if (arity.optional > 0) {
       const max = arity.required + arity.optional
       return length >= arity.required && length <= max
-        ? new Ok(list)
+        ? new Ok(undefined)
         : new Err(`expected ${arity.required}...${max}, but got ${length}`)
     } else {
       return length === arity.required
-        ? new Ok(list)
+        ? new Ok(undefined)
         : new Err(`expected ${arity.required}, but got ${length}`)
     }
   }

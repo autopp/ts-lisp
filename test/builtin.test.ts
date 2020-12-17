@@ -1,7 +1,8 @@
 import { makeBuiltinEnv } from "@/builtin"
-import { evalSExpr } from "@/eval"
+import { invokeFunc, evalSExpr } from "@/eval"
 import { Ok } from "@/result"
 import {
+  BuiltinFunc,
   makeBool,
   makeCons,
   makeList,
@@ -33,10 +34,30 @@ function makeSExpr(sexpr: SExprLike): SExpr {
   return sexpr
 }
 
+function cons(car: SExprLike, cdr: SExprLike): SExpr {
+  return makeCons(makeSExpr(car), makeSExpr(cdr))
+}
+
 describe("cons", () => {
   it("returns new cons cell", () => {
     expect(evalSExpr(makeSExpr(["cons", 1, 2]), makeBuiltinEnv())).toEqual(
       new Ok(makeCons(makeNum(1), makeNum(2)))
     )
+  })
+})
+
+describe("car", () => {
+  it("returns car of cons cell", () => {
+    const env = makeBuiltinEnv()
+    const f = makeBuiltinEnv().lookup("car") as BuiltinFunc
+    expect(invokeFunc(f, [cons(1, 2)], env)).toEqual(new Ok(makeNum(1)))
+  })
+})
+
+describe("cdr", () => {
+  it("returns cdr of cons cell", () => {
+    const env = makeBuiltinEnv()
+    const f = makeBuiltinEnv().lookup("cdr") as BuiltinFunc
+    expect(invokeFunc(f, [cons(1, 2)], env)).toEqual(new Ok(makeNum(2)))
   })
 })

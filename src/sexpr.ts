@@ -62,7 +62,7 @@ function makeArity(x: Partial<Arity>): Arity {
   }
 }
 
-type ProcBody = (args: SExpr[], env: Env) => EvalResult
+export type ProcBody = (args: SExpr[], env: Env) => EvalResult
 
 export type SpForm = {
   type: "spForm"

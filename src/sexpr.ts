@@ -185,3 +185,46 @@ export function toArray(
 
   return new None()
 }
+
+export function formatSExpr(sexpr: SExpr): string {
+  return formatSExprWithStack(sexpr, [])
+}
+
+function formatSExprWithStack(sexpr: SExpr, stack: Cons[]): string {
+  if (isNil(sexpr)) {
+    return "()"
+  } else if (isBool(sexpr)) {
+    return sexpr ? "#t" : "#f"
+  } else if ([isNum, isSym].some((pred) => pred(sexpr))) {
+    return `${sexpr}`
+  } else if (isProc(sexpr)) {
+    const label = isSpForm(sexpr)
+      ? "special"
+      : isBuiltinFunc(sexpr)
+      ? "builtin"
+      : "lambda"
+    return sexpr.name === "" ? `#<${label}>` : `#<${label} ${sexpr.name}>`
+  } else if (isCons(sexpr)) {
+    return formatCons(sexpr, stack)
+  }
+
+  throw new Error(`not implemented formatting ${sexpr}`)
+}
+
+function formatCons(cons: Cons, stack: Cons[]): string {
+  if (stack.some((visited) => Object.is(visited, cons))) {
+    return "(...)"
+  }
+
+  stack.push(cons)
+  const formatted: string[] = [formatSExprWithStack(cons.car, stack)]
+  let rest: SExpr
+  for (rest = cons.cdr; isCons(rest); rest = rest.cdr) {
+    formatted.push(formatSExprWithStack(rest.car, stack))
+  }
+
+  const tail = isNil(rest) ? "" : ` . ${formatSExprWithStack(rest, stack)}`
+  stack.pop()
+
+  return `(${formatted.join(" ")}${tail})`
+}

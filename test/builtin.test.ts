@@ -1,8 +1,8 @@
-import { makeBuiltinEnv } from "@/builtin"
-import { invokeFunc, evalSExpr } from "@/eval"
+import { makeBuiltinFuncs } from "@/builtin"
+import { Env } from "@/env"
+import { invokeFunc, EvalResult } from "@/eval"
 import { Ok } from "@/result"
 import {
-  BuiltinFunc,
   makeBool,
   makeCons,
   makeList,
@@ -38,26 +38,42 @@ function cons(car: SExprLike, cdr: SExprLike): SExpr {
   return makeCons(makeSExpr(car), makeSExpr(cdr))
 }
 
-describe("cons", () => {
-  it("returns new cons cell", () => {
-    expect(evalSExpr(makeSExpr(["cons", 1, 2]), makeBuiltinEnv())).toEqual(
-      new Ok(makeCons(makeNum(1), makeNum(2)))
+function emptyEnv(): Env {
+  return new Env([], null)
+}
+
+function describeBuiltinFunc(
+  name: string,
+  f: (invoke: (args: SExprLike[], env?: Env) => EvalResult) => unknown
+) {
+  const builtinFunc = makeBuiltinFuncs().find(
+    (builtin) => builtin.name === name
+  )
+
+  if (builtinFunc === undefined) {
+    throw new Error(`builtin func ${name} is not defined yet`)
+  }
+  describe(builtinFunc.name, () => {
+    f((args: SExprLike[], env: Env = emptyEnv()) =>
+      invokeFunc(builtinFunc, args.map(makeSExpr), env)
     )
   })
-})
+}
 
-describe("car", () => {
-  it("returns car of cons cell", () => {
-    const env = makeBuiltinEnv()
-    const f = makeBuiltinEnv().lookup("car") as BuiltinFunc
-    expect(invokeFunc(f, [cons(1, 2)], env)).toEqual(new Ok(makeNum(1)))
+describeBuiltinFunc("cons", (invoke) => {
+  it("returns new cons cell", () => {
+    expect(invoke([1, 2])).toEqual(new Ok(cons(1, 2)))
   })
 })
 
-describe("cdr", () => {
+describeBuiltinFunc("car", (invoke) => {
+  it("returns car of cons cell", () => {
+    expect(invoke([cons(1, 2)])).toEqual(new Ok(makeNum(1)))
+  })
+})
+
+describeBuiltinFunc("cdr", (invoke) => {
   it("returns cdr of cons cell", () => {
-    const env = makeBuiltinEnv()
-    const f = makeBuiltinEnv().lookup("cdr") as BuiltinFunc
-    expect(invokeFunc(f, [cons(1, 2)], env)).toEqual(new Ok(makeNum(2)))
+    expect(invoke([cons(1, 2)])).toEqual(new Ok(makeNum(2)))
   })
 })

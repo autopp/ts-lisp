@@ -32,7 +32,7 @@ export function evalSExpr(sexpr: SExpr, env: Env): EvalResult {
       .flatMap(({ list: [shouldProc, ...args] }) =>
         evalSExpr(shouldProc, env).flatMap((proc) => {
           if (isSpForm(proc)) {
-            return callSpForm(proc, args, env)
+            return invokeSpForm(proc, args, env)
           }
           if (isFunc(proc)) {
             return callFunc(proc, args, env)
@@ -44,7 +44,11 @@ export function evalSExpr(sexpr: SExpr, env: Env): EvalResult {
   }
 }
 
-function callSpForm(spForm: SpForm, args: SExpr[], env: Env): EvalResult {
+export function invokeSpForm(
+  spForm: SpForm,
+  args: SExpr[],
+  env: Env
+): EvalResult {
   return validateByArity(args, spForm.arity).flatMap(() =>
     spForm.body(args, env)
   )

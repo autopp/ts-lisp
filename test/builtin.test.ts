@@ -1,8 +1,10 @@
-import { makeBuiltinFuncs } from "@/builtin"
+import { makeBuiltinFuncs, makeSpForms } from "@/builtin"
 import { Env } from "@/env"
-import { invokeFunc, EvalResult } from "@/eval"
+import { invokeFunc, EvalResult, invokeSpForm } from "@/eval"
 import { Ok } from "@/result"
 import {
+  SpForm,
+  BuiltinFunc,
   makeBool,
   makeCons,
   makeList,
@@ -11,6 +13,7 @@ import {
   NIL,
   SExpr,
 } from "@/sexpr"
+import { describeEach } from "./helper"
 
 type SExprLike = null | boolean | number | string | SExprLike[] | SExpr
 
@@ -42,23 +45,58 @@ function emptyEnv(): Env {
   return new Env([], null)
 }
 
+function describeInvokable<T extends SpForm | BuiltinFunc>(
+  makeInvokables: () => T[],
+  invoker: (invokable: T, args: SExpr[], env: Env) => EvalResult,
+  name: string,
+  f: (invoke: (args: SExprLike[], env?: Env) => EvalResult) => unknown
+) {
+  const invokable = makeInvokables().find(
+    (invokable) => invokable.name === name
+  )
+
+  if (invokable === undefined) {
+    throw new Error(`builtin func ${name} is not defined yet`)
+  }
+  describe(invokable.name, () => {
+    f((args: SExprLike[], env: Env = emptyEnv()) =>
+      invoker(invokable, args.map(makeSExpr), env)
+    )
+  })
+}
+
+function describeSpForm(
+  name: string,
+  f: (invoke: (args: SExprLike[], env?: Env) => EvalResult) => unknown
+) {
+  describeInvokable(makeSpForms, invokeSpForm, name, f)
+}
+
 function describeBuiltinFunc(
   name: string,
   f: (invoke: (args: SExprLike[], env?: Env) => EvalResult) => unknown
 ) {
-  const builtinFunc = makeBuiltinFuncs().find(
-    (builtin) => builtin.name === name
-  )
-
-  if (builtinFunc === undefined) {
-    throw new Error(`builtin func ${name} is not defined yet`)
-  }
-  describe(builtinFunc.name, () => {
-    f((args: SExprLike[], env: Env = emptyEnv()) =>
-      invokeFunc(builtinFunc, args.map(makeSExpr), env)
-    )
-  })
+  describeInvokable(makeBuiltinFuncs, invokeFunc, name, f)
 }
+
+describeSpForm("quote", (invoke) => {
+  describeEach<[SExprLike, SExpr]>(
+    [
+      ["with primitive value 42", 42, makeNum(42)],
+      ["with symbol unknown", "unknown", makeSym("unknown")],
+      [
+        "with list (1 2 3)",
+        [1, 2, 3],
+        makeList(makeNum(1), makeNum(2), makeNum(3)),
+      ],
+    ],
+    (arg, expected) => {
+      it("returns the given value", () => {
+        expect(invoke([arg])).toEqual(new Ok(expected))
+      })
+    }
+  )
+})
 
 describeBuiltinFunc("cons", (invoke) => {
   it("returns new cons cell", () => {

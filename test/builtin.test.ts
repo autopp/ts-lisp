@@ -1,7 +1,7 @@
 import { makeBuiltins } from "@/builtin"
 import { Env } from "@/env"
 import { invokeFunc, EvalResult, invokeSpForm } from "@/eval"
-import { Ok } from "@/result"
+import { Err, Ok } from "@/result"
 import {
   makeBool,
   makeCons,
@@ -11,6 +11,8 @@ import {
   NIL,
   SExpr,
   isSpForm,
+  FALSE,
+  TRUE,
 } from "@/sexpr"
 import { describeEach } from "./helper"
 
@@ -103,4 +105,64 @@ describeBuiltin("cdr", (invoke) => {
   it("returns cdr of cons cell", () => {
     expect(invoke([cons(1, 2)])).toEqual(new Ok(makeNum(2)))
   })
+})
+
+describeBuiltin("not", (invoke) => {
+  describeEach<[SExprLike, SExpr]>(
+    [
+      ["with nil", NIL, TRUE],
+      ["with false", FALSE, TRUE],
+      ["with true", TRUE, FALSE],
+      ["with number", makeNum(0), FALSE],
+      ["with symbol", makeSym("x"), FALSE],
+      ["with cons", makeCons(FALSE, FALSE), FALSE],
+    ],
+    (arg, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(invoke([arg])).toEqual(new Ok(expected))
+      })
+    }
+  )
+})
+
+describeBuiltin("and", (invoke) => {
+  describeEach<[SExprLike[], EvalResult]>(
+    [
+      ["with no args", [], new Ok(TRUE)],
+      ["with two true", [true, true], new Ok(TRUE)],
+      ["with true and false", [true, false], new Ok(FALSE)],
+      ["with falsy and error", [null, "unknown"], new Ok(FALSE)],
+      [
+        "with error and true",
+        ["unknown", true],
+        new Err("unknown is not defined"),
+      ],
+    ],
+    (args, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(invoke(args)).toEqual(expected)
+      })
+    }
+  )
+})
+
+describeBuiltin("or", (invoke) => {
+  describeEach<[SExprLike[], EvalResult]>(
+    [
+      ["with no args", [], new Ok(FALSE)],
+      ["with two false", [false, false], new Ok(FALSE)],
+      ["with false and true", [false, true], new Ok(TRUE)],
+      ["with truthy and error", [1, "unknown"], new Ok(TRUE)],
+      [
+        "with false and error",
+        [false, "unknown"],
+        new Err("unknown is not defined"),
+      ],
+    ],
+    (args, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(invoke(args)).toEqual(expected)
+      })
+    }
+  )
 })

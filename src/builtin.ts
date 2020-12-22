@@ -1,4 +1,5 @@
 import { Env } from "./env"
+import { evalSExpr } from "./eval"
 import { Err, Ok } from "./result"
 import {
   makeBuiltinFunc,
@@ -7,6 +8,10 @@ import {
   BuiltinFunc,
   SpForm,
   makeSpForm,
+  toBool,
+  makeBool,
+  TRUE,
+  FALSE,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -30,5 +35,30 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
     makeBuiltinFunc("cdr", { required: 1 }, ([cons]) =>
       isCons(cons) ? new Ok(cons.cdr) : new Err("expected cons")
     ),
+    makeBuiltinFunc(
+      "not",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(!toBool(sexpr)))
+    ),
+    makeSpForm("and", { required: 0, hasRest: true }, (sexprs, env) => {
+      for (const sexpr of sexprs) {
+        const evaled = evalSExpr(sexpr, env).map(toBool)
+        if (evaled.isErr() || evaled.value === FALSE) {
+          return evaled
+        }
+      }
+
+      return new Ok(TRUE)
+    }),
+    makeSpForm("or", { required: 0, hasRest: true }, (sexprs, env) => {
+      for (const sexpr of sexprs) {
+        const evaled = evalSExpr(sexpr, env).map(toBool)
+        if (evaled.isErr() || evaled.value === TRUE) {
+          return evaled
+        }
+      }
+
+      return new Ok(FALSE)
+    }),
   ]
 }

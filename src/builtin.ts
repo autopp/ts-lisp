@@ -6,23 +6,19 @@ import {
   isCons,
   BuiltinFunc,
   SpForm,
-  SExpr,
   makeSpForm,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
   return new Env(
-    [
-      ...makeBuiltinFuncs().map((f): [string, SExpr] => [f.name, f]),
-      ...makeSpForms().map((f): [string, SExpr] => [f.name, f]),
-    ],
-
+    makeBuiltins().map((f) => [f.name, f]),
     null
   )
 }
 
-export function makeBuiltinFuncs(): BuiltinFunc[] {
+export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
   return [
+    makeSpForm("quote", { required: 1 }, ([sexpr]) => new Ok(sexpr)),
     makeBuiltinFunc(
       "cons",
       { required: 2 },
@@ -35,8 +31,4 @@ export function makeBuiltinFuncs(): BuiltinFunc[] {
       isCons(cons) ? new Ok(cons.cdr) : new Err("expected cons")
     ),
   ]
-}
-
-export function makeSpForms(): SpForm[] {
-  return [makeSpForm("quote", { required: 1 }, ([sexpr]) => new Ok(sexpr))]
 }

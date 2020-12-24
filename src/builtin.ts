@@ -60,5 +60,10 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
 
       return new Ok(FALSE)
     }),
+    makeBuiltinFunc(
+      "eq?",
+      { required: 2 },
+      ([x, y]) => new Ok(makeBool(Object.is(x, y)))
+    ),
   ]
 }

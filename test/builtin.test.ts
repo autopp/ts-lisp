@@ -166,3 +166,25 @@ describeBuiltin("or", (invoke) => {
     }
   )
 })
+
+describeBuiltin("eq?", (invoke) => {
+  const c = cons(1, 2)
+  describeEach<[SExprLike, SExprLike, boolean]>(
+    [
+      ["with true and false", true, false, false],
+      ["with two true", true, true, true],
+      ["with two false", false, false, true],
+      ["with 1 and 2", 1, 2, false],
+      ["with 1 and 1", 1, 1, true],
+      ["with x and y", "x", "y", false],
+      ["with x and x", "x", "x", true],
+      ["with (1 . 2) and (1 . 2)", cons(1, 2), cons(1, 2), false],
+      ["with same cons", c, c, true],
+    ],
+    (x, y, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(invoke([x, y])).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})

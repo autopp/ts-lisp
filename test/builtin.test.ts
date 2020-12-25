@@ -13,6 +13,9 @@ import {
   isSpForm,
   FALSE,
   TRUE,
+  BuiltinFunc,
+  SpForm,
+  formatSExpr,
 } from "@/sexpr"
 import { describeEach } from "./helper"
 
@@ -46,122 +49,164 @@ function emptyEnv(): Env {
   return new Env([], null)
 }
 
-function describeBuiltin(
-  name: string,
-  f: (invoke: (args: SExprLike[], env?: Env) => EvalResult) => unknown
-) {
+type Invoke = ((args: SExprLike[], env?: Env) => EvalResult) & {
+  target: SpForm | BuiltinFunc
+}
+
+function describeBuiltin(name: string, f: (invoke: Invoke) => unknown) {
   const builtin = makeBuiltins().find((invokable) => invokable.name === name)
 
   if (builtin === undefined) {
     throw new Error(`builtin func ${name} is not defined yet`)
   }
-  if (isSpForm(builtin)) {
-    describe(builtin.name, () => {
-      f((args: SExprLike[], env: Env = emptyEnv()) =>
+
+  const invoke = (isSpForm(builtin)
+    ? (args: SExprLike[], env: Env = emptyEnv()) =>
         invokeSpForm(builtin, args.map(makeSExpr), env)
-      )
-    })
-  } else {
-    describe(builtin.name, () => {
-      f((args: SExprLike[], env: Env = emptyEnv()) =>
-        invokeFunc(builtin, args.map(makeSExpr), env)
-      )
-    })
+    : (args: SExprLike[], env: Env = emptyEnv()) =>
+        invokeFunc(builtin, args.map(makeSExpr), env)) as Invoke
+  invoke.target = builtin
+  describe(builtin.name, () => {
+    f(invoke)
+  })
+}
+
+function describeCases<T extends any[]>(
+  invoke: Invoke,
+  table: ([string, SExprLike[], ...T] | [SExprLike[], ...T])[],
+  f: (subject: (env?: Env) => EvalResult, ...x: [...T, SExprLike[]]) => unknown
+) {
+  function makeCase(
+    description: string,
+    args: SExpr[],
+    rest: T
+  ): [string, SExpr[], T] {
+    const suffix = description === "" ? "" : ` (${description})`
+    return [
+      `when "${formatSExpr(
+        makeSExpr([invoke.target.name, ...args])
+      )}"${suffix}`,
+      args,
+      rest,
+    ]
   }
+  const tableWithName: [string, SExpr[], T][] = table.map((c) => {
+    if (typeof c[0] === "string") {
+      const [description, args, ...rest] = c as [string, SExpr[], ...T]
+      return makeCase(description, args, rest)
+    } else {
+      const [args, ...rest] = c as [SExpr[], ...T]
+      return makeCase("", args, rest)
+    }
+  })
+
+  describeEach<[SExpr[], T]>(tableWithName, (args, rest) => {
+    f((env?: Env) => invoke(args, env), ...rest, args)
+  })
 }
 
 describeBuiltin("quote", (invoke) => {
-  describeEach<[SExprLike, SExpr]>(
+  describeCases<[SExprLike]>(
+    invoke,
     [
-      ["with primitive value 42", 42, makeNum(42)],
-      ["with symbol unknown", "unknown", makeSym("unknown")],
-      [
-        "with list (1 2 3)",
-        [1, 2, 3],
-        makeList(makeNum(1), makeNum(2), makeNum(3)),
-      ],
+      ["primitive value", [42], 42],
+      ["undefined symbol", ["unknown"], "unknown"],
+      [[[1, 2, 3]], [1, 2, 3]],
     ],
-    (arg, expected) => {
+    (subject, expected) => {
       it("returns the given value", () => {
-        expect(invoke([arg])).toEqual(new Ok(expected))
+        expect(subject()).toEqual(new Ok(makeSExpr(expected)))
       })
     }
   )
 })
 
 describeBuiltin("cons", (invoke) => {
-  it("returns new cons cell", () => {
-    expect(invoke([1, 2])).toEqual(new Ok(cons(1, 2)))
-  })
+  describeCases<[SExprLike]>(
+    invoke,
+    [[[1, 2], cons(1, 2)]],
+    (subject, expected) => {
+      it("returns new cons cell", () => {
+        expect(subject()).toEqual(new Ok(makeSExpr(expected)))
+      })
+    }
+  )
 })
 
 describeBuiltin("car", (invoke) => {
-  it("returns car of cons cell", () => {
-    expect(invoke([cons(1, 2)])).toEqual(new Ok(makeNum(1)))
-  })
+  describeCases<[SExprLike]>(
+    invoke,
+    [[[cons(1, 2)], 1]],
+    (subject, expected) => {
+      it("returns car of cons cell", () => {
+        expect(subject()).toEqual(new Ok(makeSExpr(expected)))
+      })
+    }
+  )
 })
 
 describeBuiltin("cdr", (invoke) => {
-  it("returns cdr of cons cell", () => {
-    expect(invoke([cons(1, 2)])).toEqual(new Ok(makeNum(2)))
-  })
+  describeCases<[SExprLike]>(
+    invoke,
+    [[[cons(1, 2)], 2]],
+    (subject, expected) => {
+      it("returns ccdr of cons cell", () => {
+        expect(subject()).toEqual(new Ok(makeSExpr(expected)))
+      })
+    }
+  )
 })
 
 describeBuiltin("not", (invoke) => {
-  describeEach<[SExprLike, SExpr]>(
+  describeCases<[SExpr]>(
+    invoke,
     [
-      ["with nil", NIL, TRUE],
-      ["with false", FALSE, TRUE],
-      ["with true", TRUE, FALSE],
-      ["with number", makeNum(0), FALSE],
-      ["with symbol", makeSym("x"), FALSE],
-      ["with cons", makeCons(FALSE, FALSE), FALSE],
+      [[NIL], TRUE],
+      [[FALSE], TRUE],
+      [[TRUE], FALSE],
+      [[makeNum(0)], FALSE],
+      [[makeSym("x")], FALSE],
+      [[makeCons(FALSE, FALSE)], FALSE],
     ],
-    (arg, expected) => {
+    (subject, expected) => {
       it(`returns ${expected}`, () => {
-        expect(invoke([arg])).toEqual(new Ok(expected))
+        expect(subject()).toEqual(new Ok(expected))
       })
     }
   )
 })
 
 describeBuiltin("and", (invoke) => {
-  describeEach<[SExprLike[], EvalResult]>(
+  describeCases<[EvalResult]>(
+    invoke,
     [
-      ["with no args", [], new Ok(TRUE)],
-      ["with two true", [true, true], new Ok(TRUE)],
-      ["with true and false", [true, false], new Ok(FALSE)],
-      ["with falsy and error", [null, "unknown"], new Ok(FALSE)],
-      [
-        "with error and true",
-        ["unknown", true],
-        new Err("unknown is not defined"),
-      ],
+      [[], new Ok(TRUE)],
+      [[true, true], new Ok(TRUE)],
+      [[true, false], new Ok(FALSE)],
+      [[null, "unknown"], new Ok(FALSE)],
+      [["unknown", true], new Err("unknown is not defined")],
     ],
-    (args, expected) => {
+    (subject, expected) => {
       it(`returns ${expected}`, () => {
-        expect(invoke(args)).toEqual(expected)
+        expect(subject()).toEqual(expected)
       })
     }
   )
 })
 
 describeBuiltin("or", (invoke) => {
-  describeEach<[SExprLike[], EvalResult]>(
+  describeCases<[EvalResult]>(
+    invoke,
     [
-      ["with no args", [], new Ok(FALSE)],
-      ["with two false", [false, false], new Ok(FALSE)],
-      ["with false and true", [false, true], new Ok(TRUE)],
-      ["with truthy and error", [1, "unknown"], new Ok(TRUE)],
-      [
-        "with false and error",
-        [false, "unknown"],
-        new Err("unknown is not defined"),
-      ],
+      [[], new Ok(FALSE)],
+      [[false, false], new Ok(FALSE)],
+      [[false, true], new Ok(TRUE)],
+      [[1, "unknown"], new Ok(TRUE)],
+      [[false, "unknown"], new Err("unknown is not defined")],
     ],
-    (args, expected) => {
+    (subject, expected) => {
       it(`returns ${expected}`, () => {
-        expect(invoke(args)).toEqual(expected)
+        expect(subject()).toEqual(expected)
       })
     }
   )
@@ -169,21 +214,22 @@ describeBuiltin("or", (invoke) => {
 
 describeBuiltin("eq?", (invoke) => {
   const c = cons(1, 2)
-  describeEach<[SExprLike, SExprLike, boolean]>(
+  describeCases<[boolean]>(
+    invoke,
     [
-      ["with true and false", true, false, false],
-      ["with two true", true, true, true],
-      ["with two false", false, false, true],
-      ["with 1 and 2", 1, 2, false],
-      ["with 1 and 1", 1, 1, true],
-      ["with x and y", "x", "y", false],
-      ["with x and x", "x", "x", true],
-      ["with (1 . 2) and (1 . 2)", cons(1, 2), cons(1, 2), false],
-      ["with same cons", c, c, true],
+      [[true, false], false],
+      [[true, true], true],
+      [[false, false], true],
+      [[1, 2], false],
+      [[1, 1], true],
+      [["x", "y"], false],
+      [["x", "x"], true],
+      ["different cons cells", [cons(1, 2), cons(1, 2)], false],
+      ["same cons cells", [c, c], true],
     ],
-    (x, y, expected) => {
+    (subject, expected) => {
       it(`returns ${expected}`, () => {
-        expect(invoke([x, y])).toEqual(new Ok(makeBool(expected)))
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
       })
     }
   )

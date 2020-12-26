@@ -71,6 +71,7 @@ function describeBuiltin(name: string, f: (invoke: Invoke) => unknown) {
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function describeCases<T extends any[]>(
   invoke: Invoke,
   table: ([string, SExprLike[], ...T] | [SExprLike[], ...T])[],
@@ -226,6 +227,29 @@ describeBuiltin("eq?", (invoke) => {
       [["x", "x"], true],
       ["different cons cells", [cons(1, 2), cons(1, 2)], false],
       ["same cons cells", [c, c], true],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("equal?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[true, false], false],
+      [[true, true], true],
+      [[false, false], true],
+      [[1, 2], false],
+      [[1, 1], true],
+      [["x", "y"], false],
+      [["x", "x"], true],
+      [[cons(1, 2), cons(1, 3)], false],
+      [[cons(1, 2), cons(1, 2)], true],
+      [[cons(1, cons(2, 3)), cons(1, cons(2, 3))], true],
     ],
     (subject, expected) => {
       it(`returns ${expected}`, () => {

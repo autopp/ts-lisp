@@ -12,6 +12,7 @@ import {
   makeBool,
   TRUE,
   FALSE,
+  SExpr,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -65,5 +66,14 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
       { required: 2 },
       ([x, y]) => new Ok(makeBool(Object.is(x, y)))
     ),
+    makeBuiltinFunc("equal?", { required: 2 }, ([x, y]) => {
+      function equal(x: SExpr, y: SExpr): boolean {
+        return (
+          Object.is(x, y) ||
+          (isCons(x) && isCons(y) && equal(x.car, y.car) && equal(x.cdr, y.cdr))
+        )
+      }
+      return new Ok(makeBool(equal(x, y)))
+    }),
   ]
 }

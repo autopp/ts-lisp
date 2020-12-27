@@ -258,3 +258,22 @@ describeBuiltin("equal?", (invoke) => {
     }
   )
 })
+
+describeBuiltin("atom?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], true],
+      [[FALSE], true],
+      [[0], true],
+      [["x"], true],
+      [[cons(1, 2)], false],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${{ expected }}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})

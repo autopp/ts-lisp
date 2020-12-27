@@ -147,6 +147,11 @@ export function isProc(x: any): x is Proc {
   return isSpForm(x) || isFunc(x)
 }
 
+export type Atom = Nil | Num | Bool | Sym
+export function isAtom(x: any): x is Atom {
+  return isNil(x) || isNum(x) || isBool(x) || isSym(x)
+}
+
 export type SExpr = Nil | Num | Bool | Sym | Cons | Proc
 
 export function toBool(x: SExpr): Bool {

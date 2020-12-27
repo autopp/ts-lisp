@@ -13,6 +13,7 @@ import {
   TRUE,
   FALSE,
   SExpr,
+  isAtom,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -75,5 +76,10 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
       }
       return new Ok(makeBool(equal(x, y)))
     }),
+    makeBuiltinFunc(
+      "atom?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isAtom(sexpr)))
+    ),
   ]
 }

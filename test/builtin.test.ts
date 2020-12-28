@@ -16,6 +16,10 @@ import {
   BuiltinFunc,
   SpForm,
   formatSExpr,
+  isFunc,
+  isBuiltinFunc,
+  isCons,
+  isSym,
 } from "@/sexpr"
 import { describeEach } from "./helper"
 
@@ -79,24 +83,34 @@ function describeCases<T extends any[]>(
 ) {
   function makeCase(
     description: string,
-    args: SExpr[],
+    args: SExprLike[],
     rest: T
   ): [string, SExpr[], T] {
     const suffix = description === "" ? "" : ` (${description})`
+    const sexprs = args.map(makeSExpr)
+    const formatedArgs = sexprs.map((arg) => {
+      if (isBuiltinFunc(arg)) {
+        return arg.name
+      }
+
+      const formatted = formatSExpr(arg)
+      return isBuiltinFunc(invoke.target) && (isCons(arg) || isSym(arg))
+        ? `'${formatted}`
+        : formatted
+    })
     return [
-      `when "${formatSExpr(
-        makeSExpr([invoke.target.name, ...args])
-      )}"${suffix}`,
-      args,
+      `when "(${[invoke.target.name, ...formatedArgs].join(" ")})"${suffix}`,
+      sexprs,
       rest,
     ]
   }
+
   const tableWithName: [string, SExpr[], T][] = table.map((c) => {
     if (typeof c[0] === "string") {
-      const [description, args, ...rest] = c as [string, SExpr[], ...T]
+      const [description, args, ...rest] = c as [string, SExprLike[], ...T]
       return makeCase(description, args, rest)
     } else {
-      const [args, ...rest] = c as [SExpr[], ...T]
+      const [args, ...rest] = c as [SExprLike[], ...T]
       return makeCase("", args, rest)
     }
   })

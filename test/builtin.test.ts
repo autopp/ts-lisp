@@ -16,7 +16,6 @@ import {
   BuiltinFunc,
   SpForm,
   formatSExpr,
-  isFunc,
   isBuiltinFunc,
   isCons,
   isSym,
@@ -285,7 +284,122 @@ describeBuiltin("atom?", (invoke) => {
       [[invoke.target], false],
     ],
     (subject, expected) => {
-      it(`returns ${{ expected }}`, () => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("null?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], true],
+      [[FALSE], false],
+      [[0], false],
+      [["x"], false],
+      [[cons(1, 2)], false],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("bool?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], false],
+      [[FALSE], true],
+      [[0], false],
+      [["x"], false],
+      [[cons(1, 2)], false],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("number?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], false],
+      [[FALSE], false],
+      [[0], true],
+      [["x"], false],
+      [[cons(1, 2)], false],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("symbol?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], false],
+      [[FALSE], false],
+      [[0], false],
+      [["x"], true],
+      [[cons(1, 2)], false],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("cons?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], false],
+      [[FALSE], false],
+      [[0], false],
+      [["x"], false],
+      [[cons(1, 2)], true],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(new Ok(makeBool(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("list?", (invoke) => {
+  describeCases<[boolean]>(
+    invoke,
+    [
+      [[NIL], true],
+      [[FALSE], false],
+      [[0], false],
+      [["x"], false],
+      [[cons(1, 2)], false],
+      [[[1, 2]], true],
+      [[invoke.target], false],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
         expect(subject()).toEqual(new Ok(makeBool(expected)))
       })
     }

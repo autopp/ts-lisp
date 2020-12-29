@@ -46,7 +46,7 @@ export function makeCons(car: SExpr, cdr: SExpr): Cons {
   return { type: "cons", car, cdr }
 }
 export function isCons(x: SExpr): x is Cons {
-  return x && typeof x === "object" && (x as any).type === "cons"
+  return x !== null && typeof x === "object" && (x as any).type === "cons"
 }
 
 export type Arity = {
@@ -163,6 +163,14 @@ export function makeList(...sexprs: SExpr[]): Cons | Nil {
     (cdr, sexpr) => makeCons(sexpr, cdr),
     NIL
   )
+}
+
+export function isList(sexpr: SExpr): boolean {
+  if (isNil(sexpr)) {
+    return true
+  }
+
+  return isCons(sexpr) && isList(sexpr.cdr)
 }
 
 export function toArray(

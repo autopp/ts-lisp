@@ -14,6 +14,11 @@ import {
   FALSE,
   SExpr,
   isAtom,
+  isNil,
+  isBool,
+  isNum,
+  isSym,
+  isList,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -80,6 +85,36 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
       "atom?",
       { required: 1 },
       ([sexpr]) => new Ok(makeBool(isAtom(sexpr)))
+    ),
+    makeBuiltinFunc(
+      "null?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isNil(sexpr)))
+    ),
+    makeBuiltinFunc(
+      "bool?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isBool(sexpr)))
+    ),
+    makeBuiltinFunc(
+      "number?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isNum(sexpr)))
+    ),
+    makeBuiltinFunc(
+      "symbol?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isSym(sexpr)))
+    ),
+    makeBuiltinFunc(
+      "cons?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isCons(sexpr)))
+    ),
+    makeBuiltinFunc(
+      "list?",
+      { required: 1 },
+      ([sexpr]) => new Ok(makeBool(isList(sexpr)))
     ),
   ]
 }

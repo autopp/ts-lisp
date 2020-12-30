@@ -99,3 +99,20 @@ export function mapWithResult<T, R, E>(
 
   return new Ok(results)
 }
+
+export function reduceWithResult<T, R, E>(
+  array: T[],
+  f: (acc: R, x: T, i: number) => Result<R, E>,
+  initial: R
+): Result<R, E> {
+  let acc = initial
+  for (let i = 0; i < array.length; i++) {
+    const r = f(acc, array[i], i)
+    if (r.isErr()) {
+      return r
+    }
+    acc = r.value
+  }
+
+  return new Ok(acc)
+}

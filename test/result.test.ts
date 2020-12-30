@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Err, Ok, Result, cond, mapWithResult } from "@/result"
+import {
+  Err,
+  Ok,
+  Result,
+  cond,
+  mapWithResult,
+  reduceWithResult,
+} from "@/result"
 import { describeEach } from "./helper"
 
 type TestResult = Result<number, string>
@@ -209,12 +216,54 @@ describe("mapWithResult", () => {
     })
   })
 
-  describe("when function returns Ok in the middle", () => {
+  describe("when function returns Err in the middle", () => {
     it(`suspends iteration and returns generated Err`, () => {
       expect(mapWithResult([1, 2, -3, 4], doublePositive)).toEqual(
         new Err("array contains negative at 2")
       )
       expect(doublePositive).toBeCalledTimes(3)
+    })
+  })
+})
+
+describe("reduceWithResult", () => {
+  let addPositive: jest.Mock<
+    Result<{ sum: number }, string>,
+    [{ sum: number }, number, number]
+  >
+
+  beforeEach(() => {
+    addPositive = jest
+      .fn<Result<{ sum: number }, string>, [{ sum: number }, number, number]>()
+      .mockImplementation(({ sum }, x, i) =>
+        x >= 0
+          ? new Ok({ sum: sum + x })
+          : new Err(`array contains negative at ${i}`)
+      )
+  })
+
+  describe("when function returns Ok to the last", () => {
+    it(`returns reduced value in Ok`, () => {
+      expect(reduceWithResult([2, 3, 4], addPositive, { sum: 1 })).toEqual(
+        new Ok({ sum: 10 })
+      )
+    })
+  })
+
+  describe("when array is empty", () => {
+    it(`returns initial value in Ok`, () => {
+      expect(reduceWithResult([], () => new Err("error"), 42)).toEqual(
+        new Ok(42)
+      )
+    })
+  })
+
+  describe("when function returns Err in the middle", () => {
+    it(`suspends iteration and returns generated Err`, () => {
+      expect(reduceWithResult([2, -3, 4], addPositive, { sum: 1 })).toEqual(
+        new Err("array contains negative at 1")
+      )
+      expect(addPositive).toBeCalledTimes(2)
     })
   })
 })

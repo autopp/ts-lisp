@@ -164,7 +164,25 @@ describeBuiltin("cdr", (invoke) => {
     invoke,
     [[[cons(1, 2)], 2]],
     (subject, expected) => {
-      it("returns ccdr of cons cell", () => {
+      it("returns cdr of cons cell", () => {
+        expect(subject()).toEqual(new Ok(makeSExpr(expected)))
+      })
+    }
+  )
+})
+
+describeBuiltin("list", (invoke) => {
+  describeCases<[SExprLike]>(
+    invoke,
+    [
+      [[], null],
+      [
+        [1, 2, 3],
+        [1, 2, 3],
+      ],
+    ],
+    (subject, expected, args) => {
+      it(`returns (${args.join(" ")})`, () => {
         expect(subject()).toEqual(new Ok(makeSExpr(expected)))
       })
     }

@@ -19,6 +19,7 @@ import {
   isNum,
   isSym,
   isList,
+  makeList,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -41,6 +42,11 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
     ),
     makeBuiltinFunc("cdr", { required: 1 }, ([cons]) =>
       isCons(cons) ? new Ok(cons.cdr) : new Err("expected cons")
+    ),
+    makeBuiltinFunc(
+      "list",
+      { required: 0, hasRest: true },
+      (sexprs) => new Ok(makeList(...sexprs))
     ),
     makeBuiltinFunc(
       "not",

@@ -1,6 +1,6 @@
 import { Env } from "./env"
 import { evalSExpr } from "./eval"
-import { Err, Ok } from "./result"
+import { Err, Ok, reduceWithResult } from "./result"
 import {
   makeBuiltinFunc,
   makeCons,
@@ -20,6 +20,7 @@ import {
   isSym,
   isList,
   makeList,
+  makeNum,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -122,5 +123,59 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
       { required: 1 },
       ([sexpr]) => new Ok(makeBool(isList(sexpr)))
     ),
+    makeBuiltinFunc("+", { required: 0, hasRest: true }, (sexprs) =>
+      reduceWithResult<SExpr, number, string>(
+        sexprs,
+        (acc, sexpr, i) =>
+          isNum(sexpr)
+            ? new Ok(acc + sexpr)
+            : new Err(`expected numbers, but arg ${i + 1} is not number`),
+        0
+      ).map(makeNum)
+    ),
+    makeBuiltinFunc("-", { required: 1, hasRest: true }, ([first, ...rest]) => {
+      if (!isNum(first)) {
+        return new Err(`expected numbers, but arg 1 is not number`)
+      }
+      if (rest.length === 0) {
+        return new Ok(makeNum(-first))
+      }
+
+      return reduceWithResult<SExpr, number, string>(
+        rest,
+        (acc, sexpr, i) =>
+          isNum(sexpr)
+            ? new Ok(acc - sexpr)
+            : new Err(`expected numbers, but arg ${i + 2} is not number`),
+        first
+      ).map(makeNum)
+    }),
+    makeBuiltinFunc("*", { required: 0, hasRest: true }, (sexprs) =>
+      reduceWithResult<SExpr, number, string>(
+        sexprs,
+        (acc, sexpr, i) =>
+          isNum(sexpr)
+            ? new Ok(acc * sexpr)
+            : new Err(`expected numbers, but arg ${i + 1} is not number`),
+        1
+      ).map(makeNum)
+    ),
+    makeBuiltinFunc("/", { required: 1, hasRest: true }, ([first, ...rest]) => {
+      if (!isNum(first)) {
+        return new Err(`expected numbers, but arg 1 is not number`)
+      }
+      if (rest.length === 0) {
+        return new Ok(makeNum(1 / first))
+      }
+
+      return reduceWithResult<SExpr, number, string>(
+        rest,
+        (acc, sexpr, i) =>
+          isNum(sexpr)
+            ? new Ok(acc / sexpr)
+            : new Err(`expected numbers, but arg ${i + 2} is not number`),
+        first
+      ).map(makeNum)
+    }),
   ]
 }

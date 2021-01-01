@@ -423,3 +423,69 @@ describeBuiltin("list?", (invoke) => {
     }
   )
 })
+
+describeBuiltin("+", (invoke) => {
+  describeCases<[EvalResult]>(
+    invoke,
+    [
+      [[], new Ok(makeNum(0))],
+      [[42], new Ok(makeNum(42))],
+      [[30, 10, 2], new Ok(makeNum(42))],
+      [[30, "10", 2], new Err("expected numbers, but arg 2 is not number")],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(expected)
+      })
+    }
+  )
+})
+
+describeBuiltin("-", (invoke) => {
+  describeCases<[EvalResult]>(
+    invoke,
+    [
+      [[42], new Ok(makeNum(-42))],
+      [[100, 20, 38], new Ok(makeNum(42))],
+      [[300, "-20", 38], new Err("expected numbers, but arg 2 is not number")],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(expected)
+      })
+    }
+  )
+})
+
+describeBuiltin("*", (invoke) => {
+  describeCases<[EvalResult]>(
+    invoke,
+    [
+      [[], new Ok(makeNum(1))],
+      [[42], new Ok(makeNum(42))],
+      [[2, 3, 7], new Ok(makeNum(42))],
+      [[2, "3", 7], new Err("expected numbers, but arg 2 is not number")],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(expected)
+      })
+    }
+  )
+})
+
+describeBuiltin("/", (invoke) => {
+  describeCases<[EvalResult]>(
+    invoke,
+    [
+      [[2], new Ok(makeNum(0.5))],
+      [[252, 3, 2], new Ok(makeNum(42))],
+      [[253, "3", 2], new Err("expected numbers, but arg 2 is not number")],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject()).toEqual(expected)
+      })
+    }
+  )
+})

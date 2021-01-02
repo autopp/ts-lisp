@@ -1,12 +1,13 @@
 import { Env } from "./env"
 import { evalSExpr } from "./eval"
-import { Err, Ok, reduceWithResult } from "./result"
+import { Err, mapWithResult, Ok, reduceWithResult, Result } from "./result"
 import {
   makeBuiltinFunc,
   makeCons,
   isCons,
-  BuiltinFunc,
   SpForm,
+  BuiltinFunc,
+  UserFunc,
   makeSpForm,
   toBool,
   makeBool,
@@ -22,6 +23,8 @@ import {
   makeList,
   makeNum,
   NIL,
+  makeUserFunc,
+  toArray,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -189,6 +192,58 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
             : new Err(`expected numbers, but arg ${i + 2} is not number`),
         first
       ).map(makeNum)
+    }),
+    makeSpForm("lambda", { required: 2 }, ([params, body], env) => {
+      type RequiredParams = UserFunc["requiredParams"]
+      type OptionalParams = UserFunc["optionalParams"]
+      type RestParam = UserFunc["restParam"]
+      const spec: Result<
+        [RequiredParams, OptionalParams, string | undefined],
+        string
+      > = isSym(params)
+        ? new Ok([[], [], params])
+        : toArray(params)
+            .okOr("expect param list")
+            .flatMap(({ list, extra }) => {
+              const requiredParams: RequiredParams = []
+              let i: number
+              for (i = 0; i < list.length; i++) {
+                const param = list[i]
+                if (!isSym(param)) {
+                  break
+                }
+                requiredParams.push(param)
+              }
+
+              return mapWithResult(
+                list.slice(i),
+                (param, j): Result<OptionalParams[number], string> =>
+                  toArray(param)
+                    .filter(
+                      ({ list, extra }) =>
+                        list.length === 2 && extra === undefined
+                    )
+                    .okOr("parameter list is invalid")
+                    .flatMap(({ list: [name, defaultVal] }) =>
+                      isSym(name)
+                        ? new Ok({ name, defaultVal })
+                        : new Err(`parameter ${i + j + 1} is invalid`)
+                    )
+              ).flatMap((optionalParams) => {
+                const shouldRest: Result<RestParam, string> = extra.isDefined()
+                  ? isSym(extra.value)
+                    ? new Ok(extra.value)
+                    : new Err("rest parameter should be a symbol")
+                  : new Ok(undefined)
+                return shouldRest.map((restParam) => [
+                  requiredParams,
+                  optionalParams,
+                  restParam,
+                ])
+              })
+            })
+
+      return spec.map((params) => makeUserFunc("", ...params, body, env))
     }),
   ]
 }

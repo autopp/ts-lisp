@@ -12,7 +12,7 @@ interface OptionInterface<T> {
 
 export class Some<T> implements OptionInterface<T> {
   private kind = "some"
-  private readonly value: T
+  readonly value: T
 
   constructor(value: T) {
     this.value = value

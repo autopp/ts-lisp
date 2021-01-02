@@ -1,7 +1,7 @@
 import { makeBuiltins } from "@/builtin"
 import { Env } from "@/env"
 import { invokeFunc, EvalResult, invokeSpForm } from "@/eval"
-import { Err, Ok } from "@/result"
+import { Err, Ok, Result } from "@/result"
 import {
   makeBool,
   makeCons,
@@ -19,6 +19,10 @@ import {
   isBuiltinFunc,
   isCons,
   isSym,
+  makeBuiltinFunc,
+  isNum,
+  isUserFunc,
+  UserFunc,
 } from "@/sexpr"
 import { describeEach } from "./helper"
 
@@ -511,6 +515,47 @@ describeBuiltin("/", (invoke) => {
     (subject, expected) => {
       it(`returns ${expected}`, () => {
         expect(subject()).toEqual(expected)
+      })
+    }
+  )
+})
+
+describeBuiltin("lambda", (invoke) => {
+  function expectOk<T, E>(r: Result<T, E>): asserts r is Ok<T, E> {
+    expect(r.isOk()).toBeTrue()
+  }
+
+  function expectSExprType<T extends SExpr>(
+    sexpr: SExpr,
+    pred: (x: SExpr) => asserts x is T
+  ): asserts sexpr is T {
+    expect(pred(sexpr)).toBeTrue()
+  }
+
+  let env: Env
+  beforeEach(() => {
+    env = emptyEnv()
+    env.define(
+      "add",
+      makeBuiltinFunc("add", { required: 2 }, ([x, y]) =>
+        isNum(x) && isNum(y)
+          ? new Ok(makeNum(x + y))
+          : new Err("expect 2 numbers")
+      )
+    )
+  })
+
+  describeCases<[SExprLike[], SExprLike]>(
+    invoke,
+    [[[["x"], ["add", "x", 2]], [40], 42]],
+    (subject, args, expected) => {
+      it(`create user function with current env`, () => {
+        const lambda = subject(env)
+        expectOk(lambda)
+        expectSExprType<UserFunc>(lambda.value, isUserFunc)
+        expect(invokeFunc(lambda.value, args.map(makeSExpr), env)).toEqual(
+          new Ok(makeSExpr(expected))
+        )
       })
     }
   )

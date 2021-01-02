@@ -21,6 +21,7 @@ import {
   isList,
   makeList,
   makeNum,
+  NIL,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -74,6 +75,18 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
 
       return new Ok(FALSE)
     }),
+    makeSpForm(
+      "if",
+      { required: 2, optional: 1 },
+      ([condExpr, thenExpr, ...optElse], env) =>
+        evalSExpr(condExpr, env).flatMap((cond) => {
+          if (toBool(cond)) {
+            return evalSExpr(thenExpr, env)
+          }
+
+          return optElse.length === 0 ? new Ok(NIL) : evalSExpr(optElse[0], env)
+        })
+    ),
     makeBuiltinFunc(
       "eq?",
       { required: 2 },

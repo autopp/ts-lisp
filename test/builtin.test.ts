@@ -244,6 +244,32 @@ describeBuiltin("or", (invoke) => {
   )
 })
 
+describeBuiltin("if", (invoke) => {
+  let env: Env
+  beforeEach(() => {
+    env = emptyEnv()
+    env.define("true", TRUE)
+    env.define("false", FALSE)
+  })
+
+  describeCases<[EvalResult]>(
+    invoke,
+    [
+      [["true", 1], new Ok(makeNum(1))],
+      [["true", 1, 2], new Ok(makeNum(1))],
+      [["true", 1, "unknown"], new Ok(makeNum(1))],
+      [["false", 1], new Ok(NIL)],
+      [["false", 1, 2], new Ok(makeNum(2))],
+      [["false", "unknown", 2], new Ok(makeNum(2))],
+    ],
+    (subject, expected) => {
+      it(`returns ${expected}`, () => {
+        expect(subject(env)).toEqual(expected)
+      })
+    }
+  )
+})
+
 describeBuiltin("eq?", (invoke) => {
   const c = cons(1, 2)
   describeCases<[boolean]>(

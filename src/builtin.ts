@@ -221,7 +221,7 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
                   toArray(param)
                     .filter(
                       ({ list, extra }) =>
-                        list.length === 2 && extra === undefined
+                        list.length === 2 && !extra.isDefined()
                     )
                     .okOr("parameter list is invalid")
                     .flatMap(({ list: [name, defaultVal] }) =>

@@ -7,7 +7,6 @@ import {
   FALSE,
   makeNum,
   makeSym,
-  SExpr,
   makeBuiltinFunc,
   isNum,
   makeList,
@@ -15,10 +14,10 @@ import {
   makeCons,
   makeSpForm,
 } from "@/sexpr"
-import { describeEach } from "./helper"
+import { describeEach, makeSExpr, SExprLike } from "./helper"
 
 describe("evalSExpr", () => {
-  describeEach<[SExpr, string, EvalResult]>(
+  describeEach<[SExprLike, string, EvalResult]>(
     [
       ["with ()", NIL, "()", new Ok(NIL)],
       ["with #t", TRUE, "#t", new Ok(TRUE)],
@@ -102,6 +101,12 @@ describe("evalSExpr", () => {
         "42",
         new Ok(makeNum(42)),
       ],
+      [
+        "with (list1to3 1)",
+        ["list1to3", 1],
+        "(1 2 3)",
+        new Ok(makeSExpr([1, 2, 3])),
+      ],
     ],
     (sexpr, expectedString, expected) => {
       const add = makeBuiltinFunc("add", { required: 2 }, ([left, right]) => {
@@ -146,6 +151,19 @@ describe("evalSExpr", () => {
       )
       env.define("inc", inc)
 
+      const list1to3 = makeUserFunc(
+        "list1to3",
+        ["x"],
+        [
+          { name: "y", defaultVal: makeNum(2) },
+          { name: "z", defaultVal: makeNum(3) },
+        ],
+        undefined,
+        makeSExpr(["list2more", "x", "y", "z"]),
+        new Env([["list2more", list2more]], env)
+      )
+      env.define("list1to3", list1to3)
+
       const ifZero = makeSpForm(
         "if-zero",
         { required: 2 },
@@ -157,7 +175,7 @@ describe("evalSExpr", () => {
       env.define("if-zero", ifZero)
 
       it(`returns ${expectedString}`, () => {
-        expect(evalSExpr(sexpr, env)).toEqual(expected)
+        expect(evalSExpr(makeSExpr(sexpr), env)).toEqual(expected)
       })
     }
   )

@@ -1,11 +1,10 @@
 import { makeBuiltins } from "@/builtin"
 import { Env } from "@/env"
 import { invokeFunc, EvalResult, invokeSpForm } from "@/eval"
-import { Err, Ok, Result } from "@/result"
+import { Err, Ok } from "@/result"
 import {
   makeBool,
   makeCons,
-  makeList,
   makeNum,
   makeSym,
   NIL,
@@ -24,33 +23,7 @@ import {
   isUserFunc,
   UserFunc,
 } from "@/sexpr"
-import { describeEach } from "./helper"
-
-type SExprLike = null | boolean | number | string | SExprLike[] | SExpr
-
-function makeSExpr(sexpr: SExprLike): SExpr {
-  if (sexpr === null) {
-    return NIL
-  }
-  if (typeof sexpr === "boolean") {
-    return makeBool(sexpr)
-  }
-  if (typeof sexpr === "number") {
-    return makeNum(sexpr)
-  }
-  if (typeof sexpr === "string") {
-    return makeSym(sexpr)
-  }
-  if (Array.isArray(sexpr)) {
-    return makeList(...sexpr.map(makeSExpr))
-  }
-
-  return sexpr
-}
-
-function cons(car: SExprLike, cdr: SExprLike): SExpr {
-  return makeCons(makeSExpr(car), makeSExpr(cdr))
-}
+import { cons, describeEach, makeSExpr, SExprLike } from "./helper"
 
 function emptyEnv(): Env {
   return new Env([], null)
@@ -542,7 +515,27 @@ describeBuiltin("lambda", (invoke) => {
 
   describeCases<[SExprLike[], SExprLike]>(
     invoke,
-    [[[["x"], ["add", "x", 2]], [40], 42]],
+    [
+      [[["x"], ["add", "x", 2]], [40], 42],
+      [
+        "call with 40",
+        [
+          ["x", ["y", 2]],
+          ["add", "x", "y"],
+        ],
+        [40],
+        42,
+      ],
+      [
+        "call with 41, 1",
+        [
+          ["x", ["y", 2]],
+          ["add", "x", "y"],
+        ],
+        [41, 1],
+        42,
+      ],
+    ],
     (subject, args, expected) => {
       it(`create user function with current env`, () => {
         const lambda = expectResultToBeUserFunc(subject(env))

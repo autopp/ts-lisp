@@ -65,12 +65,30 @@ export function invokeFunc(func: Func, args: SExpr[], env: Env): EvalResult {
     if (isBuiltinFunc(func)) {
       return func.body(args, env)
     } else {
+      const firstOptional = args.length - func.requiredParams.length
+      // process required args
       const namedArgs: [
         string,
         SExpr
       ][] = func.requiredParams.map((name, i) => [name, args[i]])
-      const newEnv = new Env(namedArgs, func.env)
-      return evalSExpr(func.body, newEnv)
+      // process given optional args
+      args
+        .slice(func.arity.required, func.arity.required + func.arity.optional)
+        .forEach((arg, i) => {
+          const param = func.optionalParams[i]
+          namedArgs.push([param.name, arg])
+        })
+
+      // process omitted optional args
+      return mapWithResult(
+        func.optionalParams.slice(firstOptional),
+        ({ name, defaultVal }) =>
+          evalSExpr(defaultVal, env).map((val): [string, SExpr] => [name, val])
+      ).flatMap((optionalArgs) => {
+        namedArgs.push(...optionalArgs)
+        const newEnv = new Env(namedArgs, func.env)
+        return evalSExpr(func.body, newEnv)
+      })
     }
   })
 }

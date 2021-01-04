@@ -522,7 +522,7 @@ describeBuiltin("/", (invoke) => {
 
 describeBuiltin("lambda", (invoke) => {
   function expectOk<T, E>(r: Result<T, E>): asserts r is Ok<T, E> {
-    expect(r.isOk()).toBeTrue()
+    expect(r).toEqual(new Ok(expect.toSatisfy((x) => isUserFunc(x))))
   }
 
   function expectSExprType<T extends SExpr>(
@@ -535,6 +535,7 @@ describeBuiltin("lambda", (invoke) => {
   let env: Env
   beforeEach(() => {
     env = emptyEnv()
+    env.define("lambda", invoke.target)
     env.define(
       "add",
       makeBuiltinFunc("add", { required: 2 }, ([x, y]) =>
@@ -559,4 +560,20 @@ describeBuiltin("lambda", (invoke) => {
       })
     }
   )
+
+  describe('with "(lambda (x) (lambda (y) (add x y)))"', () => {
+    it(`create user function which returns closure`, () => {
+      const lambda = invoke([["x"], ["lambda", ["y"], ["add", "x", "y"]]], env)
+      expectOk(lambda)
+      expectSExprType<UserFunc>(lambda.value, isUserFunc)
+
+      const closure = invokeFunc(lambda.value, [makeNum(40)], env)
+      expectOk(closure)
+      expectSExprType<UserFunc>(closure.value, isUserFunc)
+
+      expect(invokeFunc(closure.value, [makeNum(2)], env)).toEqual(
+        new Ok(makeNum(42))
+      )
+    })
+  })
 })

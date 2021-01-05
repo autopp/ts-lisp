@@ -511,6 +511,14 @@ describeBuiltin("lambda", (invoke) => {
           : new Err("expect 2 numbers")
       )
     )
+    env.define(
+      "cons",
+      makeBuiltinFunc(
+        "cons",
+        { required: 2 },
+        ([car, cdr]) => new Ok(makeCons(car, cdr))
+      )
+    )
   })
 
   describeCases<[SExprLike[], SExprLike]>(
@@ -535,6 +543,21 @@ describeBuiltin("lambda", (invoke) => {
         [41, 1],
         42,
       ],
+      ["call with empty args", ["ls", "ls"], [], []],
+      ["call with 3 args", ["ls", "ls"], [1, 2, 3], [1, 2, 3]],
+      [
+        "call with required args only",
+        [cons("first", "rest"), ["cons", "first", "rest"]],
+        [1],
+        [1],
+      ],
+      [
+        "call with rest args",
+        [cons("first", "rest"), ["cons", "first", "rest"]],
+        [1, 2, 3],
+        [1, 2, 3],
+      ],
+      ["call with 3 args", ["ls", "ls"], [1, 2, 3], [1, 2, 3]],
     ],
     (subject, args, expected) => {
       it(`create user function with current env`, () => {

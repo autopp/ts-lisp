@@ -10,6 +10,7 @@ import {
   isNum,
   isSpForm,
   isSym,
+  makeList,
   SExpr,
   SpForm,
   toArray,
@@ -72,12 +73,11 @@ export function invokeFunc(func: Func, args: SExpr[], env: Env): EvalResult {
         SExpr
       ][] = func.requiredParams.map((name, i) => [name, args[i]])
       // process given optional args
-      args
-        .slice(func.arity.required, func.arity.required + func.arity.optional)
-        .forEach((arg, i) => {
-          const param = func.optionalParams[i]
-          namedArgs.push([param.name, arg])
-        })
+      const positional = func.arity.required + func.arity.optional
+      args.slice(func.arity.required, positional).forEach((arg, i) => {
+        const param = func.optionalParams[i]
+        namedArgs.push([param.name, arg])
+      })
 
       // process omitted optional args
       return mapWithResult(
@@ -86,6 +86,11 @@ export function invokeFunc(func: Func, args: SExpr[], env: Env): EvalResult {
           evalSExpr(defaultVal, env).map((val): [string, SExpr] => [name, val])
       ).flatMap((optionalArgs) => {
         namedArgs.push(...optionalArgs)
+
+        // process rest args
+        if (func.restParam !== undefined) {
+          namedArgs.push([func.restParam, makeList(...args.slice(positional))])
+        }
         const newEnv = new Env(namedArgs, func.env)
         return evalSExpr(func.body, newEnv)
       })

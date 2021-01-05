@@ -107,6 +107,24 @@ describe("evalSExpr", () => {
         "(1 2 3)",
         new Ok(makeSExpr([1, 2, 3])),
       ],
+      [
+        "with (list1to3 1 20)",
+        ["list1to3", 1, 20],
+        "(1 20 3)",
+        new Ok(makeSExpr([1, 20, 3])),
+      ],
+      [
+        "with (list-with-zero)",
+        ["list-with-zero"],
+        "()",
+        new Ok(makeSExpr([0])),
+      ],
+      [
+        "with (list-with-zero)",
+        ["list-with-zero", 1, 2],
+        "(1 2)",
+        new Ok(makeSExpr([0, 1, 2])),
+      ],
     ],
     (sexpr, expectedString, expected) => {
       const add = makeBuiltinFunc("add", { required: 2 }, ([left, right]) => {
@@ -163,6 +181,16 @@ describe("evalSExpr", () => {
         new Env([["list2more", list2more]], env)
       )
       env.define("list1to3", list1to3)
+
+      const listWithZero = makeUserFunc(
+        "list-with-zero",
+        [],
+        [],
+        "ls",
+        makeSExpr(["cons", 0, "ls"]),
+        new Env([["cons", cons]], env)
+      )
+      env.define("list-with-zero", listWithZero)
 
       const ifZero = makeSpForm(
         "if-zero",

@@ -585,3 +585,30 @@ describeBuiltin("lambda", (invoke) => {
     })
   })
 })
+
+describeBuiltin("define", (invoke) => {
+  let env: Env
+  beforeEach(() => {
+    env = emptyEnv()
+    env.define("one", makeNum(1))
+    env.define(
+      "cons",
+      makeBuiltinFunc(
+        "cons",
+        { required: 2 },
+        ([car, cdr]) => new Ok(makeCons(car, cdr))
+      )
+    )
+  })
+
+  describeCases<[SExpr, SExpr]>(
+    invoke,
+    [[["x", ["cons", "one", 2]], makeSym("x"), cons(1, 2)]],
+    (subject, expected, bound, [name]) => {
+      it(`binds value and returns given name "${name}"`, () => {
+        expect(subject(env)).toEqual(new Ok(expected))
+        expect(env.lookup(name as string)).toEqual(bound)
+      })
+    }
+  )
+})

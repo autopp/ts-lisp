@@ -245,5 +245,14 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
 
       return spec.map((params) => makeUserFunc("", ...params, body, env))
     }),
+    makeSpForm("define", { required: 2 }, ([name, value], env) => {
+      if (!isSym(name)) {
+        return new Err("1st argument shoud be symbol")
+      }
+      return evalSExpr(value, env).map((evaled) => {
+        env.define(name, evaled)
+        return name
+      })
+    }),
   ]
 }

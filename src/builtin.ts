@@ -25,6 +25,7 @@ import {
   NIL,
   makeUserFunc,
   toArray,
+  formatSExpr,
 } from "./sexpr"
 
 export function makeBuiltinEnv(): Env {
@@ -253,6 +254,12 @@ export function makeBuiltins(): (SpForm | BuiltinFunc)[] {
         env.define(name, evaled)
         return name
       })
+    }),
+    makeBuiltinFunc("print", { hasRest: true }, (sexprs) => {
+      sexprs.forEach((sexpr) => {
+        console.log(formatSExpr(sexpr))
+      })
+      return new Ok(NIL)
     }),
   ]
 }

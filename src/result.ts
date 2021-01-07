@@ -42,17 +42,17 @@ export class Ok<T, E> implements ResultInterface<T, E> {
 
 export class Err<T, E> implements ResultInterface<T, E> {
   private readonly kind = "err"
-  private readonly value: E
+  readonly reason: E
   constructor(value: E) {
-    this.value = value
+    this.reason = value
   }
 
   cast<R>(): Err<R, E> {
-    return new Err(this.value)
+    return new Err(this.reason)
   }
 
   toString(): string {
-    return `Err(${this.value})`
+    return `Err(${this.reason})`
   }
 
   isOk(this: Result<T, E>): this is Ok<T, E> {
@@ -68,11 +68,11 @@ export class Err<T, E> implements ResultInterface<T, E> {
   }
 
   map<R>(_f: (x: T) => R): Result<R, E> {
-    return new Err(this.value)
+    return new Err(this.reason)
   }
 
   flatMap<R>(_f: (x: T) => Result<R, E>): Result<R, E> {
-    return new Err(this.value)
+    return new Err(this.reason)
   }
 }
 
